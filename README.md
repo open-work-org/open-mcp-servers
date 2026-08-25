@@ -1,28 +1,29 @@
 <p align="center">
-  <img src="assets/icon.png" width="80" height="80" alt="Meta">
+  <img src="assets/icon.png" width="80" height="80" alt="Open MCP Servers">
 </p>
 
-<h1 align="center">Meta MCP Server</h1>
+<h1 align="center">Open MCP Servers</h1>
 
 <p align="center">
-  <strong>Connect any AI assistant to Meta's entire business platform</strong><br>
-  <sub>Facebook Pages &middot; Instagram &middot; Threads &middot; Ads Manager &middot; Commerce &middot; Conversions API &middot; Insights</sub>
+  <strong>Self-hosted MCP connectors for the applications you choose</strong><br>
+  <sub>Open source &middot; Private by default &middot; Extendable &middot; MIT licensed</sub>
 </p>
 
 <p align="center">
-  <code>200 tools</code> &bull;
-  <code>7 platforms</code> &bull;
-  <code>Graph API v21.0</code>
+  <code>200 Meta tools included</code> &bull;
+  <code>stdio transport</code> &bull;
+  <code>self-hosted</code>
 </p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@oliverames/meta-mcp-server"><img src="https://img.shields.io/npm/v/@oliverames/meta-mcp-server?style=flat-square&color=f5a542" alt="npm"></a>
-  <a href="https://github.com/oliverames/meta-mcp-server/releases/tag/v2.0.2"><img src="https://img.shields.io/github/v/release/oliverames/meta-mcp-server?style=flat-square&color=f5a542&label=MCPB" alt="MCPB release"></a>
+  <a href="https://github.com/open-work-org/open-mcp-servers/releases"><img src="https://img.shields.io/github/v/release/open-work-org/open-mcp-servers?style=flat-square&color=f5a542&label=release" alt="Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-f5a542?style=flat-square" alt="License"></a>
   <a href="https://www.buymeacoffee.com/oliverames"><img src="https://img.shields.io/badge/Buy_Me_a_Coffee-support-f5a542?style=flat-square&logo=buy-me-a-coffee&logoColor=white" alt="Buy Me a Coffee"></a>
 </p>
 
 <p align="center">
+  <a href="#why-open-mcp-servers">Why Open MCP Servers</a> &bull;
   <a href="#quick-start">Quick Start</a> &bull;
   <a href="#install-with-mcpb">MCPB Download</a> &bull;
   <a href="#what-you-can-do">What You Can Do</a> &bull;
@@ -33,9 +34,23 @@
 
 ---
 
-## Why This Exists
+## Why Open MCP Servers
 
-Social media management across Meta's platforms — Facebook Pages, Instagram, Threads, Ads Manager, Commerce — requires juggling multiple dashboards, each with its own API quirks and token flows. This server consolidates the entire Meta Graph API surface into a single MCP interface, so your AI assistant can publish content, analyze performance, manage ad campaigns, and moderate engagement across all platforms in one conversation.
+Open MCP Servers is a home for self-hosted [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) connectors. Run the server on your own machine or infrastructure, connect it to an MCP-compatible AI client, and keep credentials and application data under your control.
+
+This repository currently includes a production-ready Meta connector covering Facebook Pages, Instagram, Threads, Ads Manager, Commerce, Conversions API, audiences, and insights. The connector architecture is intentionally straightforward so the community can add connectors for other applications without depending on a hosted gateway or a vendor-controlled middle layer.
+
+You are free to use, modify, fork, host, and redistribute this project under the [MIT License](LICENSE). You are responsible for the credentials, API access, hosting environment, and terms of the third-party applications you connect.
+
+### What “connect any application” means
+
+MCP provides the standard interface between an AI client and a server. Each application still needs a connector that knows its API, authentication, and operations. Use the included Meta connector as a reference, then add a new API client and tool modules for the application you want to support.
+
+This project does not send your credentials to a central service and does not require a subscription.
+
+## Included connector: Meta
+
+Social media management across Meta's platforms — Facebook Pages, Instagram, Threads, Ads Manager, and Commerce — requires juggling multiple dashboards, each with its own API quirks and token flows. The included connector consolidates these APIs into a single MCP interface, so your AI assistant can publish content, analyze performance, manage ad campaigns, and moderate engagement across all platforms in one conversation.
 
 Every tool returns actionable error messages — not cryptic API codes. Token expired? You get a regeneration link. Missing permission? You see exactly which one and where to grant it. This means less debugging and more doing.
 
@@ -43,9 +58,9 @@ Every tool returns actionable error messages — not cryptic API codes. Token ex
 
 ### Install with MCPB
 
-For Claude Desktop and other MCPB-compatible clients, download the local bundle from the [v2.0.2 release](https://github.com/oliverames/meta-mcp-server/releases/tag/v2.0.2):
+For Claude Desktop and other MCPB-compatible clients, download a local bundle from the [latest release](https://github.com/open-work-org/open-mcp-servers/releases) when one is available:
 
-[Download `meta-mcp-server-2.0.2.mcpb`](https://github.com/oliverames/meta-mcp-server/releases/download/v2.0.2/meta-mcp-server-2.0.2.mcpb)
+The npm package and source install below are the portable options for self-hosting.
 
 The bundle includes the Meta favicon, production runtime dependencies, and setup prompts for Meta and optional Threads access tokens.
 
@@ -65,17 +80,19 @@ Add to your MCP client config:
 }
 ```
 
-That's it. Your AI assistant now has access to 200 Meta tools.
+That's it. Your AI assistant now has access to 200 Meta tools through a server you control.
 
 > Need a token? Go to the [Graph API Explorer](https://developers.facebook.com/tools/explorer), select your app, and generate one. See [Configuration](#configuration) for details.
 
 ### From Source
 
 ```bash
-git clone https://github.com/oliverames/meta-mcp-server.git
-cd meta-mcp-server
+git clone https://github.com/open-work-org/open-mcp-servers.git
+cd open-mcp-servers
 npm install && npm run build
 ```
+
+The compiled server communicates over stdio, so it works with any MCP client that supports local stdio servers. Hosting it yourself is the default deployment model; no hosted account or project registration is required by this repository.
 
 ---
 
@@ -693,6 +710,22 @@ npm run test:watch  # Development mode
 ```
 
 Development conventions: Zod `.strict()` schemas, `response_format` parameter on read tools, and `errorResult()` for tool errors with `isError: true`.
+
+### Adding a connector
+
+New connectors should keep application-specific code isolated from the shared MCP entry point:
+
+1. Add an API client under `src/services/` with environment-based credential configuration.
+2. Add one or more tool modules under `src/tools/` with strict Zod input schemas.
+3. Register the tools from `src/index.ts`.
+4. Document setup, permissions, and supported operations in `docs/` and the README.
+5. Add unit and integration coverage before opening a pull request.
+
+Keep credentials in environment variables or a local secret manager. Never commit tokens, private keys, or customer data.
+
+## License
+
+This project is available under the [MIT License](LICENSE). It is free to use for personal or commercial projects, including modification, hosting, and redistribution, subject to the license notice. Third-party APIs and services remain subject to their own terms, quotas, and authentication requirements.
 
 ---
 
