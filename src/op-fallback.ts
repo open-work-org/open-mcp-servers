@@ -5,7 +5,11 @@ import { execFileSync } from "node:child_process";
  * Sets process.env[envVar] on success so downstream code can read it normally.
  */
 export function resolveApiKey(envVar: string, opRef: string): void {
-  if (process.env[envVar]) return;
+  // CI and hosted runners should rely on injected environment variables rather
+  // than attempting to contact a local developer's 1Password CLI.
+  if (process.env[envVar] || process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true") {
+    return;
+  }
   try {
     const value = execFileSync("op", ["read", opRef], {
       encoding: "utf-8",
