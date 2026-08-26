@@ -7,6 +7,7 @@ dist/
 # Secrets & environment
 .env
 .env.*
+!.env.example
 .env.local
 credentials.json
 secrets.json

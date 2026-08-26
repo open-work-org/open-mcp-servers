@@ -16,10 +16,9 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@oliverames/meta-mcp-server"><img src="https://img.shields.io/npm/v/@oliverames/meta-mcp-server?style=flat-square&color=f5a542" alt="npm"></a>
+  <a href="https://www.npmjs.com/package/@open-work-org/meta-mcp-server"><img src="https://img.shields.io/npm/v/@open-work-org/meta-mcp-server?style=flat-square&color=f5a542" alt="npm"></a>
   <a href="https://github.com/open-work-org/open-mcp-servers/releases"><img src="https://img.shields.io/github/v/release/open-work-org/open-mcp-servers?style=flat-square&color=f5a542&label=release" alt="Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-f5a542?style=flat-square" alt="License"></a>
-  <a href="https://www.buymeacoffee.com/oliverames"><img src="https://img.shields.io/badge/Buy_Me_a_Coffee-support-f5a542?style=flat-square&logo=buy-me-a-coffee&logoColor=white" alt="Buy Me a Coffee"></a>
 </p>
 
 <p align="center">
@@ -29,6 +28,7 @@
   <a href="#what-you-can-do">What You Can Do</a> &bull;
   <a href="#complete-tool-reference">All 200 Tools</a> &bull;
   <a href="#configuration">Configuration</a> &bull;
+  <a href="#self-hosted-http">HTTP Hosting</a> &bull;
   <a href="#architecture">Architecture</a>
 </p>
 
@@ -71,7 +71,7 @@ Add to your MCP client config:
   "mcpServers": {
     "meta": {
       "command": "npx",
-      "args": ["-y", "@oliverames/meta-mcp-server"],
+      "args": ["-y", "@open-work-org/meta-mcp-server"],
       "env": {
         "META_ACCESS_TOKEN": "your_token_here"
       }
@@ -531,6 +531,18 @@ Generate visual charts from data for reports and presentations.
 |----------|----------|---------|-------------|
 | `META_ACCESS_TOKEN` | Yes | None | Long-lived Meta Graph API token for Facebook Pages, Instagram, Ads Manager, Commerce, Conversions API, Audiences, Insights, and utility tools. |
 | `THREADS_ACCESS_TOKEN` | No | None | Threads API token. Required only for Threads publishing, replies, and insights tools. |
+| `MCP_TRANSPORT` | No | `stdio` | Set to `streamable-http` for a remotely reachable MCP endpoint. |
+| `MCP_HTTP_HOST` | No | `127.0.0.1` | HTTP bind address. Use `0.0.0.0` inside Docker or a hosted environment. |
+| `MCP_HTTP_PORT` | No | `3000` | HTTP server port. |
+| `MCP_HTTP_PATH` | No | `/mcp` | Streamable HTTP endpoint path. |
+| `MCP_HTTP_AUTH_TOKEN` | Recommended for HTTP | None | Shared bearer token required by remote HTTP clients. Required when binding outside loopback unless explicitly overridden. |
+| `MCP_HTTP_ALLOW_UNAUTHENTICATED` | No | `false` | Explicitly allow unauthenticated non-loopback HTTP hosting. Avoid for internet-facing deployments. |
+| `MCP_HTTP_ALLOWED_ORIGINS` | No | Localhost origins | Comma-separated browser origins allowed to call the HTTP endpoint. |
+| `META_GRAPH_API_BASE_URL` | No | `https://graph.facebook.com` | Meta Graph API host, without the version path. Useful for proxies and testing. |
+| `META_GRAPH_API_VERSION` | No | `v21.0` | Meta Graph API version. |
+| `THREADS_API_BASE_URL` | No | `https://graph.threads.net` | Threads API host, without the version path. |
+| `THREADS_API_VERSION` | No | `v1.0` | Threads API version. |
+| `QUICKCHART_BASE_URL` | No | `https://quickchart.io/chart` | Chart rendering endpoint. |
 
 ### 1. Create a Meta App
 
@@ -608,6 +620,55 @@ This means you can skip setting env vars entirely if you have `op` installed and
 
 Works with any MCP client that supports **stdio transport**. `THREADS_ACCESS_TOKEN` is optional — only needed for Threads tools.
 
+## Self-hosted HTTP
+
+Use Streamable HTTP when the MCP server should run independently on a customer server, VM, Docker host, or private network. The server exposes one MCP endpoint and a health check:
+
+```text
+MCP endpoint: https://your-domain.example/mcp
+Health check: https://your-domain.example/healthz
+```
+
+For a local HTTP instance:
+
+```bash
+MCP_TRANSPORT=streamable-http \
+MCP_HTTP_AUTH_TOKEN="choose-a-long-random-token" \
+npm start
+```
+
+The server listens on `http://127.0.0.1:3000/mcp` by default. For a remote deployment, set `MCP_HTTP_HOST=0.0.0.0`, keep `MCP_HTTP_AUTH_TOKEN` configured, and put the server behind HTTPS.
+
+An MCP client that supports remote servers can then connect to the endpoint using its HTTP configuration. The exact configuration key varies by client, but the shape is typically:
+
+```json
+{
+  "mcpServers": {
+    "meta-remote": {
+      "url": "https://your-domain.example/mcp",
+      "headers": {
+        "Authorization": "Bearer choose-a-long-random-token"
+      }
+    }
+  }
+}
+```
+
+The HTTP server refuses to bind to a non-loopback address without authentication unless `MCP_HTTP_ALLOW_UNAUTHENTICATED=true` is explicitly set. Do not use that override on an internet-facing deployment.
+
+### Docker and Docker Compose
+
+The repository includes a production Dockerfile and Compose configuration:
+
+```bash
+cp .env.example .env
+# Edit .env and set META_ACCESS_TOKEN and MCP_HTTP_AUTH_TOKEN.
+docker compose up -d --build
+curl http://localhost:3000/healthz
+```
+
+For production, terminate TLS at a reverse proxy or load balancer and forward `/mcp` to the container. Keep access tokens and `MCP_HTTP_AUTH_TOKEN` in the hosting platform's secret manager rather than committing `.env`.
+
 ---
 
 ## How It Works
@@ -648,7 +709,9 @@ fb_exchange_token=CURRENT_TOKEN"
 
 ```
 src/
-├── index.ts              Server entry point (stdio transport)
+├── index.ts              Server entry point (stdio or Streamable HTTP)
+├── server-factory.ts     Creates and registers the Meta MCP server
+├── http-server.ts        Streamable HTTP server, auth, sessions, and health check
 ├── constants.ts          API versions, base URLs, field constants
 ├── types.ts              TypeScript interfaces for Meta entities
 ├── services/
@@ -683,7 +746,7 @@ src/
 
 ## API Coverage
 
-Targets **Meta Graph API v21.0** and **Threads API v1.0**.
+Targets **Meta Graph API v21.0** and **Threads API v1.0** by default; both versions and their base URLs can be overridden through environment variables.
 
 | API | Status |
 |:---|:---|
@@ -736,16 +799,7 @@ This project is available under the [MIT License](LICENSE). It is free to use fo
 ---
 
 <p align="center">
-  <a href="https://www.buymeacoffee.com/oliverames">
-    <img src="https://img.shields.io/badge/Buy_Me_a_Coffee-support-f5a542?style=for-the-badge&logo=buy-me-a-coffee&logoColor=white" alt="Buy Me a Coffee">
-  </a>
-</p>
-
-<p align="center">
   <sub>
-    Built by <a href="https://ames.consulting">Oliver Ames</a> in Vermont
-    &bull; <a href="https://github.com/oliverames">GitHub</a>
-    &bull; <a href="https://linkedin.com/in/oliverames">LinkedIn</a>
-    &bull; <a href="https://bsky.app/profile/oliverames.bsky.social">Bluesky</a>
+    Maintained by <a href="https://github.com/open-work-org">Open Work Org</a>
   </sub>
 </p>

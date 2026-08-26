@@ -1,7 +1,7 @@
 {
-  "name": "@oliverames/meta-mcp-server",
-  "version": "2.0.2",
-  "description": "Self-hosted, open-source MCP connector for Meta APIs with 200 tools across Facebook Pages, Instagram, Threads, Ads Manager, Commerce, Conversions API, and more",
+  "name": "@open-work-org/meta-mcp-server",
+  "version": "1.0.0",
+  "description": "Self-hosted Meta MCP connector with local stdio and remote Streamable HTTP hosting, covering 200 tools across Facebook Pages, Instagram, Threads, Ads Manager, Commerce, and more",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -24,7 +24,7 @@
     "url": "https://github.com/open-work-org/open-mcp-servers.git"
   },
   "license": "MIT",
-  "author": "Oliver Ames",
+  "author": "Open Work Org",
   "keywords": [
     "mcp",
     "meta",
@@ -34,6 +34,7 @@
     "ads-manager",
     "graph-api",
     "model-context-protocol",
+    "streamable-http",
     "claude",
     "ai-tools",
     "self-hosted",
@@ -44,13 +45,13 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.6.1",
-    "axios": "^1.7.9",
-    "zod": "^3.23.8"
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "axios": "^1.20.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
-    "tsx": "^4.19.2",
+    "tsx": "^4.23.12",
     "typescript": "^5.7.2",
     "vitest": "^4.1.0"
   }

@@ -5,7 +5,7 @@ import axios from "axios";
 import { writeFileSync } from "fs";
 import { join } from "path";
 
-const QUICKCHART_BASE = "https://quickchart.io/chart";
+const QUICKCHART_BASE = process.env.QUICKCHART_BASE_URL ?? "https://quickchart.io/chart";
 
 function buildChartUrl(config: object, width: number, height: number): string {
   const params = new URLSearchParams({
