@@ -1,851 +1,298 @@
-<p align="center">
-  <img src="assets/icon.png" width="80" height="80" alt="Open MCP Servers">
-</p>
+# Open MCP Servers
 
-<h1 align="center">Open MCP Servers</h1>
+Self-hosted [Model Context Protocol](https://modelcontextprotocol.io/) connectors for Meta and GitHub.
 
-<p align="center">
-  <strong>Self-hosted MCP connectors for the applications you choose</strong><br>
-  <sub>Open source &middot; Private by default &middot; Extendable &middot; MIT licensed</sub>
-</p>
+[![CI](https://github.com/open-work-org/open-mcp-servers/actions/workflows/ci.yml/badge.svg)](https://github.com/open-work-org/open-mcp-servers/actions/workflows/ci.yml)
+[![Meta package](https://img.shields.io/npm/v/@open-work-org/meta-mcp-server?label=meta%20npm)](https://www.npmjs.com/package/@open-work-org/meta-mcp-server)
+[![GitHub package](https://img.shields.io/npm/v/@open-work-org/github-mcp-server?label=github%20npm)](https://www.npmjs.com/package/@open-work-org/github-mcp-server)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-<p align="center">
-  <code>200 Meta tools + full GitHub API</code> &bull;
-  <code>stdio transport</code> &bull;
-  <code>self-hosted</code>
-</p>
+The repository is a small npm workspaces monorepo. Each connector is independently installable and owns its source, tests, package metadata, and documentation. Credentials stay in the environment of the server you run; they are not sent to a hosted Open MCP service.
 
-<p align="center">
-  <a href="https://www.npmjs.com/package/@open-work-org/meta-mcp-server"><img src="https://img.shields.io/npm/v/@open-work-org/meta-mcp-server?style=flat-square&color=f5a542" alt="npm"></a>
-  <a href="https://www.npmjs.com/package/@open-work-org/github-mcp-server"><img src="https://img.shields.io/npm/v/@open-work-org/github-mcp-server?style=flat-square&color=f5a542" alt="npm"></a>
-  <a href="https://github.com/open-work-org/open-mcp-servers/releases"><img src="https://img.shields.io/github/v/release/open-work-org/open-mcp-servers?style=flat-square&color=f5a542&label=release" alt="Release"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-f5a542?style=flat-square" alt="License"></a>
-</p>
+## Contents
 
-<p align="center">
-  <a href="#why-open-mcp-servers">Why Open MCP Servers</a> &bull;
-  <a href="#quick-start">Quick Start</a> &bull;
-  <a href="#install-with-mcpb">MCPB Download</a> &bull;
-  <a href="#what-you-can-do">What You Can Do</a> &bull;
-  <a href="#complete-tool-reference">All 200 Tools</a> &bull;
-  <a href="#configuration">Configuration</a> &bull;
-  <a href="#self-hosted-http">HTTP Hosting</a> &bull;
-  <a href="#architecture">Architecture</a>
-</p>
+- [Connectors](#connectors)
+- [Install a connector](#install-a-connector)
+- [Run from source](#run-from-source)
+- [Transport options](#transport-options)
+- [Configuration and security](#configuration-and-security)
+- [Documentation](#documentation)
+- [Repository layout](#repository-layout)
+- [Development](#development)
+- [Releases](#releases)
+- [License](#license)
 
----
+## Connectors
 
-## Why Open MCP Servers
+| Connector | npm package | What it provides | Runtime notes |
+| --- | --- | --- | --- |
+| Meta | [`@open-work-org/meta-mcp-server`](https://www.npmjs.com/package/@open-work-org/meta-mcp-server) | 200 purpose-built tools for Facebook Pages, Instagram, Threads, Ads Manager, Commerce, Conversions API, audiences, insights, and charts | Stdio package; the root Docker image and Compose file expose this connector over Streamable HTTP |
+| GitHub | [`@open-work-org/github-mcp-server`](https://www.npmjs.com/package/@open-work-org/github-mcp-server) | GitHub's official MCP tools discovered at startup, plus local REST, GraphQL, release, tag, asset, and encrypted-secret tools | Unified mode runs the official GitHub MCP image through Docker; API-only mode does not require Docker |
 
-Open MCP Servers is a home for self-hosted [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) connectors. Run the server on your own machine or infrastructure, connect it to an MCP-compatible AI client, and keep credentials and application data under your control.
+Tool availability is permission- and version-dependent. A PAT never grants more access than GitHub or Meta grants to that token. For GitHub, the upstream tool catalog follows the selected official image, so its count can change without a source-code change in this repository.
 
-This repository includes a production-ready Meta connector covering Facebook Pages, Instagram, Threads, Ads Manager, Commerce, Conversions API, audiences, and insights, plus a GitHub connector for PAT-authorized GitHub REST and GraphQL access. The connector architecture is intentionally straightforward so the community can add connectors for other applications without depending on a hosted gateway or a vendor-controlled middle layer.
+### Meta
 
-You are free to use, modify, fork, host, and redistribute this project under the [MIT License](LICENSE). You are responsible for the credentials, API access, hosting environment, and terms of the third-party applications you connect.
+The Meta connector covers:
 
-### What “connect any application” means
+- Facebook Pages: publishing, comments, messaging, moderation, events, media, Stories, Reels, Live Video, webhooks, and automated responses.
+- Instagram: publishing, scheduling, comments, DMs, broadcast channels, discovery, and insights.
+- Ads Manager: campaigns, ad sets, ads, creatives, targeting, audiences, pixels, Conversions API, A/B tests, and Advantage+ operations.
+- Threads, Commerce, and chart generation.
 
-MCP provides the standard interface between an AI client and a server. Each application still needs a connector that knows its API, authentication, and operations. Use the included Meta connector as a reference, then add a new API client and tool modules for the application you want to support.
-
-This project does not send your credentials to a central service and does not require a subscription.
-
-## Included connector: Meta
-
-Social media management across Meta's platforms — Facebook Pages, Instagram, Threads, Ads Manager, and Commerce — requires juggling multiple dashboards, each with its own API quirks and token flows. The included connector consolidates these APIs into a single MCP interface, so your AI assistant can publish content, analyze performance, manage ad campaigns, and moderate engagement across all platforms in one conversation.
-
-Every tool returns actionable error messages — not cryptic API codes. Token expired? You get a regeneration link. Missing permission? You see exactly which one and where to grant it. This means less debugging and more doing.
-
-## Quick Start
+Start with the [Meta package README](packages/meta/README.md) and [Meta documentation index](packages/meta/docs/README.md).
 
 ### GitHub
 
-The default GitHub connector proxies GitHub's official MCP Server with `GITHUB_TOOLSETS=all` and Insiders enabled, exposing every individually named upstream tool alongside this project's full REST/GraphQL/release tools in one MCP connection. Use a fine-grained token and authorize only the repositories and permissions you require. Docker must be available because the official image is executed locally.
+The GitHub package provides two executables:
 
-See the complete [GitHub package documentation](packages/github/docs/README.md) for architecture, configuration, tools, encrypted secrets, Streamable HTTP, and release planning. Meta documentation is grouped under [packages/meta/docs/](packages/meta/docs/README.md).
+- `github-mcp-server` — unified mode. It starts the official GitHub MCP Server locally, enables the configured toolsets, imports its paginated `tools/list` catalog, and exposes those tools together with the local tools in one MCP connection. Docker is required.
+- `github-full-api-mcp-server` — API-only mode. It exposes the local REST/GraphQL/release/tag/asset/secret tools without starting Docker.
 
-Install the GitHub package independently from Meta:
+The local GitHub tools include `github_rest_api_request` and `github_graphql` escape hatches, so documented endpoints that do not yet have a dedicated tool can still be reached using the PAT. Native helpers cover releases, Git references, release assets, and encrypted Actions, Dependabot, Codespaces, and Agent secrets.
 
-```bash
+See the [GitHub package README](packages/github/README.md), [tool guide](packages/github/docs/tools.md), and [GitHub documentation index](packages/github/docs/README.md).
+
+## Install a connector
+
+Install only the package you need. Node.js 18 or newer is supported.
+
+### Meta (stdio)
+
+~~~bash
+npm install -g @open-work-org/meta-mcp-server
+~~~
+
+Example MCP client configuration:
+
+~~~json
+{
+  "mcpServers": {
+    "meta": {
+      "command": "meta-mcp-server",
+      "env": {
+        "META_ACCESS_TOKEN": "your_meta_token"
+      }
+    }
+  }
+}
+~~~
+
+Add `THREADS_ACCESS_TOKEN` when using Threads operations. Meta setup, permissions, token lifetimes, and API guides are documented in [packages/meta/docs](packages/meta/docs/README.md).
+
+### GitHub unified (stdio)
+
+~~~bash
 npm install -g @open-work-org/github-mcp-server
-```
+~~~
 
-That one GitHub package provides both executables: `github-mcp-server` (the unified official-upstream plus local API connector) and `github-full-api-mcp-server` (the local REST/GraphQL/release/secret connector without Docker).
+Example MCP client configuration:
 
-```json
+~~~json
 {
   "mcpServers": {
     "github": {
       "command": "github-mcp-server",
       "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "your_fine_grained_pat"
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "your_github_pat"
       }
     }
   }
 }
-```
+~~~
 
-For Streamable HTTP, start the same executable with `MCP_TRANSPORT=streamable-http`. It listens on `http://127.0.0.1:3001/github/mcp` by default (override with `GITHUB_MCP_HTTP_PORT` and `GITHUB_MCP_HTTP_PATH`). When binding beyond loopback, set `MCP_HTTP_AUTH_TOKEN`; unauthenticated non-loopback exposure is refused.
+Docker must be available to the host. Pin `GITHUB_MCP_IMAGE` to an official image tag or digest when reproducibility matters.
 
-The unified connection includes the official local toolsets (Actions, issues, pull requests, repositories, projects, security, discussions, notifications, and more), experimental/Insiders tools where the upstream server provides them, and the full PAT-authorized REST/GraphQL/release tools. GitHub's remote-only Copilot Spaces and support-search toolsets remain GitHub-hosted capabilities, not PAT-only local tools. Set `GITHUB_MCP_IMAGE` to a pinned official image tag or digest for reproducible deployments.
+### GitHub API-only (stdio)
 
-### Install with MCPB
+Use this variant when Docker is unavailable or when you only need the local API tools:
 
-For Claude Desktop and other MCPB-compatible clients, download a local bundle from the [latest release](https://github.com/open-work-org/open-mcp-servers/releases) when one is available:
-
-The published npm packages and source install below are the portable options for self-hosting.
-
-The bundle includes the Meta favicon, production runtime dependencies, and setup prompts for Meta and optional Threads access tokens.
-
-Add to your MCP client config:
-
-```json
+~~~json
 {
   "mcpServers": {
-    "meta": {
-      "command": "npx",
-      "args": ["-y", "@open-work-org/meta-mcp-server"],
+    "github-api": {
+      "command": "github-full-api-mcp-server",
       "env": {
-        "META_ACCESS_TOKEN": "your_token_here"
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "your_github_pat"
       }
     }
   }
 }
-```
+~~~
 
-That's it. Your AI assistant now has access to 200 Meta tools through a server you control.
+Both GitHub executables are included in the same npm package. The API-only process does not include the dynamically discovered official upstream tools.
 
-> Need a token? Go to the [Graph API Explorer](https://developers.facebook.com/tools/explorer), select your app, and generate one. See [Configuration](#configuration) for details.
+## Run from source
 
-### From Source
-
-```bash
+~~~bash
 git clone https://github.com/open-work-org/open-mcp-servers.git
 cd open-mcp-servers
-npm install && npm run build
-```
+npm ci
+npm run build
+~~~
 
-The compiled server communicates over stdio, so it works with any MCP client that supports local stdio servers. Hosting it yourself is the default deployment model; no hosted account or project registration is required by this repository.
+Run Meta after building:
 
----
+~~~bash
+META_ACCESS_TOKEN="your_meta_token" npm start
+~~~
 
-## What You Can Do
+Run the unified GitHub server after building:
 
-<table>
-<tr>
-<td width="50%" valign="top">
+~~~bash
+GITHUB_PERSONAL_ACCESS_TOKEN="your_github_pat" \
+  node packages/github/dist/index.js
+~~~
 
-### Publish everywhere
+Run the Docker-free GitHub server:
 
-Post to Facebook Pages (text, photo, video, Reels, Stories), Instagram (photos, reels, stories, carousels), and Threads (text, images, video, GIFs, links). Schedule content in advance or cross-post to multiple platforms in one call.
+~~~bash
+GITHUB_PERSONAL_ACCESS_TOKEN="your_github_pat" \
+  node packages/github/dist/full-api-index.js
+~~~
 
-```
-> Post our holiday hours to the Facebook page
-> Schedule an Instagram carousel for tomorrow at 9am
-> Cross-post this photo to both Facebook and Instagram
-> Publish a GIF to Threads with reply controls
-> Create a Facebook Reel from this video
-> Post a Story to our Facebook page
-> Publish an Instagram reel with alt text for accessibility
-> Share a link post on Threads with a quote
-```
+Copy .env.example for a starting point, but keep the real file out of version control.
 
-</td>
-<td width="50%" valign="top">
+## Transport options
 
-### Manage engagement
+### Stdio
 
-Read and reply to comments across platforms, hide inappropriate content without deleting it, manage Instagram DMs and broadcast channels, and set up automated responses for when you're away.
+Stdio is the default and is the simplest option for a local MCP client. The client launches the executable and exchanges MCP messages over stdin/stdout. Diagnostics are written to stderr.
 
-```
-> Show me unanswered Instagram DMs
-> Hide that offensive comment on our latest post
-> Reply to the top 3 comments on yesterday's reel
-> Set up an instant reply for new messages
-> Set our away message to "Back Monday at 9am"
-> Send a DM to that customer who reached out
-> What comments did we get on last week's posts?
-> Update our Messenger greeting text
-```
+### Streamable HTTP
 
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
+The Meta entrypoint can be hosted through the root Dockerfile or Compose configuration:
 
-### Analyze performance
-
-Get insights at every level — page, post, account, campaign, ad set, and individual ad. Over 70 page metrics, comprehensive Reels analytics (including skip rate and crossposted views), and full ad performance with video completion rates, ROAS, and quality rankings. Generate charts for reports.
-
-```
-> How did our Instagram perform this month?
-> Show campaign spend broken down by age group
-> What's the skip rate on our latest Reel?
-> Generate a bar chart comparing this week vs last
-> Get our Facebook page fan demographics
-> What's our follower growth trend over 90 days?
-> Show me post-level engagement for our top 5 posts
-> Create a pie chart of spend by campaign
-```
-
-</td>
-<td width="50%" valign="top">
-
-### Run ad campaigns
-
-Full campaign lifecycle — create, optimize, test, and automate. A/B testing with confidence levels, Advantage+ Shopping migration, interest/geo/demographic targeting search, reach estimates, automated rules, and comprehensive pixel management with server-side Conversions API.
-
-```
-> Create an A/B test comparing these two ad sets
-> Migrate this campaign to Advantage+ Shopping
-> Send a purchase conversion event via CAPI
-> What's the reach estimate for women 25-34 in NYC?
-> List all active campaigns and their ROAS
-> Create an automated rule: pause ads over $5 CPA
-> Check if our pixel is firing correctly
-> Upload this image for a new ad creative
-```
-
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
-
-### Manage commerce
-
-Full product catalog management for Facebook and Instagram shops — add products, update inventory, organize collections, and manage availability. Everything a brand needs to run social commerce.
-
-```
-> List all products in our catalog
-> Add this new product at $29.99, in stock
-> Mark the seasonal items as out of stock
-> Show me our "Summer Collection" product set
-> Update the description on our best-selling item
-> How many products are in each catalog?
-> Delete the discontinued product line
-> What products are currently available?
-```
-
-</td>
-<td width="50%" valign="top">
-
-### Go live and broadcast
-
-Start Facebook Live video broadcasts for product launches and events, publish Stories for time-sensitive content, and reach your audience directly through Instagram broadcast channels with polls, links, and messages.
-
-```
-> Start a live video on our Facebook page
-> Send a poll to our Instagram broadcast channel
-> Schedule a live stream for Friday at 2pm
-> Publish a story to Facebook with this photo
-> End the live broadcast
-> Send a product announcement to our broadcast channel
-> What live videos have we done this month?
-> What ads is our competitor running right now?
-```
-
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
-
-### Research competitors
-
-Search any advertiser's active ads through Meta's public Ad Library. See what creative, targeting, and spend your competitors are using — no account access needed. Look up any public Instagram business account's stats.
-
-```
-> What ads is Nike running in the US right now?
-> Search the Ad Library for "sustainable fashion" ads
-> Look up @competitor on Instagram — followers and posts
-> Show me all active ads by this page ID
-> What platforms are they running ads on?
-> How much is our competitor spending on ads?
-```
-
-</td>
-<td width="50%" valign="top">
-
-### Stay in control
-
-Debug tokens, check permissions, monitor rate limits, verify pixel health, and manage your Business Manager assets. Every error tells you exactly what went wrong and how to fix it — never a cryptic failure.
-
-```
-> Check my token status and permissions
-> Am I close to Instagram's publishing limit?
-> Run a health check on the Meta connection
-> Is our pixel receiving events?
-> List all ad accounts in our Business Manager
-> Share this pixel with our agency's ad account
-> What Threads rate limits do we have left?
-> Debug why this API call is failing
-```
-
-</td>
-</tr>
-</table>
-
----
-
-## Complete Tool Reference
-
-### Facebook Pages — 52 tools
-
-Everything a brand needs to manage their Facebook presence, messaging, and live broadcasts.
-
-| Tool | Description |
-|:---|:---|
-| `meta_list_pages` | List all Facebook Pages you manage *(call first — caches page tokens)* |
-| `meta_get_page` | Get detailed page info (category, followers, description, links) |
-| `meta_get_post` | Get a single post by ID |
-| `meta_create_post` | Create a text post on a page |
-| `meta_create_photo_post` | Create a photo post (URL or page photo ID) |
-| `meta_create_video_post` | Create a video post with optional title and description |
-| `meta_update_post` | Edit an existing post's message |
-| `meta_delete_post` | Delete a post |
-| `meta_get_posts` | Get a page's feed with pagination |
-| `meta_get_published_posts` | Get published posts only |
-| `meta_get_scheduled_posts` | Get scheduled (unpublished) posts |
-| `meta_get_promotable_posts` | Get posts eligible for ad promotion |
-| `meta_get_visitor_posts` | Get posts made by visitors on the page |
-| `meta_get_post_comments` | Get comments on a post with pagination |
-| `meta_reply_post_comment` | Reply to a comment as the page |
-| `meta_delete_comment` | Delete a comment |
-| `meta_hide_comment` | Hide or unhide a comment (non-destructive moderation) |
-| `meta_like_object` | Like or unlike a post or comment |
-| `meta_get_post_reactions` | Get reaction breakdown (like, love, haha, wow, sad, angry) |
-| `meta_get_page_insights` | Page analytics — 70+ metrics across impressions, engagement, fans, video |
-| `meta_get_post_insights` | Per-post analytics (impressions, engagement, clicks, reactions, video) |
-| `meta_get_page_conversations` | List page message conversations |
-| `meta_get_conversation_messages` | Get messages within a conversation |
-| `meta_send_page_message` | Send a message to a user (24-hour messaging window) |
-| `meta_update_page` | Update page details (about, description, website, hours, username, category, address) |
-| `meta_update_page_picture` | Update page profile picture from URL |
-| `meta_update_page_cover` | Update page cover photo from URL or existing photo |
-| `meta_create_event` | Create a page event |
-| `meta_get_page_events` | List events (upcoming, past, or canceled) |
-| `meta_get_page_albums` | List page photo albums |
-| `meta_get_page_photos` | Get photos (uploaded or tagged) |
-| `meta_get_page_videos` | List page videos |
-| `meta_get_page_tagged` | Get posts where the page is tagged |
-| `meta_get_page_fan_demographics` | Follower breakdown by age, gender, and country |
-| `meta_get_page_ratings` | Get page reviews and star ratings |
-| `meta_get_page_locations` | Location info for multi-location businesses |
-| `meta_get_page_cta` | Get the page's call-to-action button configuration |
-| `meta_get_page_tabs` | List page tabs and their configuration |
-| `meta_get_page_picture` | Get page profile picture URL |
-| `meta_get_blocked_users` | List blocked users |
-| `meta_block_user` | Block or unblock a user |
-| `meta_subscribe_page_webhooks` | Subscribe the page to webhook events |
-| `meta_publish_page_story` | Publish a Facebook Story (photo or video) |
-| `meta_publish_page_reel` | Publish a Facebook Reel |
-| `meta_cross_post` | Cross-post to Facebook + Instagram simultaneously |
-| `meta_create_live_video` | Start or schedule a live video broadcast |
-| `meta_get_live_videos` | List live videos on a page |
-| `meta_end_live_video` | End an active live broadcast |
-| `meta_get_page_automated_responses` | Get current auto-reply settings |
-| `meta_set_instant_reply` | Set the instant reply message |
-| `meta_set_away_message` | Set the away/out-of-office message |
-| `meta_set_greeting` | Set the Messenger greeting text |
-
-### Instagram — 37 tools
-
-Full Instagram Business API — publishing with scheduling, DMs, broadcast channels, engagement, discovery, and analytics.
-
-| Tool | Description |
-|:---|:---|
-| `meta_list_instagram_accounts` | List Instagram business accounts linked to your Facebook Pages |
-| `meta_get_instagram_media` | Get recent media for an Instagram account with pagination |
-| `meta_get_instagram_single_media` | Get a single media object by ID |
-| `meta_publish_instagram_photo` | Publish a photo with optional alt text and scheduling |
-| `meta_publish_instagram_reel` | Publish a reel with auto-polling and optional scheduling |
-| `meta_publish_instagram_story` | Publish a story (image or video with auto-polling) |
-| `meta_publish_instagram_carousel` | Publish a carousel (2–10 items, parallel processing, schedulable) |
-| `meta_publish_instagram_container` | Publish a pre-created media container |
-| `meta_check_instagram_container` | Check container processing status with actionable messages |
-| `meta_get_instagram_account_insights` | Account-level analytics with demographic breakdowns |
-| `meta_get_instagram_media_insights` | Per-post metrics including Reels skip rate, crossposted views |
-| `meta_get_instagram_comments` | Get comments on a media object |
-| `meta_get_instagram_comment_replies` | Get threaded replies to a comment |
-| `meta_reply_instagram_comment` | Reply to a comment |
-| `meta_delete_instagram_comment` | Delete a comment |
-| `meta_hide_instagram_comment` | Hide/unhide a comment (non-destructive moderation) |
-| `meta_search_instagram_catalog_products` | Search for products in an Instagram Shopping catalog by name |
-| `meta_search_instagram_hashtag` | Search hashtag top or recent media |
-| `meta_get_instagram_recent_hashtags` | Get your recently searched hashtags |
-| `meta_get_instagram_user` | Business discovery — look up any public business/creator by username |
-| `meta_get_instagram_stories` | Get currently active stories |
-| `meta_get_instagram_live_media` | Get live video media |
-| `meta_get_instagram_mentioned_media` | Get media where you're @mentioned |
-| `meta_get_instagram_media_children` | Get individual items in a carousel |
-| `meta_get_instagram_product_tags` | Get product tags on a media object |
-| `meta_delete_instagram_media` | Delete a media object |
-| `meta_toggle_instagram_comments` | Enable or disable comments on media |
-| `meta_check_instagram_publishing_limit` | Check rate limit status (100 posts per 24 hours) |
-| `meta_get_instagram_conversations` | List Instagram DM conversations |
-| `meta_get_instagram_messages` | Get messages in a DM conversation |
-| `meta_send_instagram_message` | Send a text DM |
-| `meta_send_instagram_media_message` | Send an image or link via DM |
-| `meta_get_instagram_available_catalogs` | List product catalogs available for Instagram Shopping on a professional account |
-| `meta_get_instagram_broadcast_channels` | List broadcast channels |
-| `meta_get_broadcast_channel_messages` | Get messages in a broadcast channel |
-| `meta_send_broadcast_channel_message` | Send a message to a broadcast channel |
-| `meta_create_broadcast_channel_poll` | Create a poll in a broadcast channel |
-
-### Ads Manager — 62 tools
-
-Complete ad campaign lifecycle — create, optimize, test, analyze, and automate. Includes Advantage+ migration, A/B testing, and comprehensive pixel management.
-
-| Tool | Description |
-|:---|:---|
-| `meta_list_ad_accounts` | List ad accounts you have access to |
-| `meta_get_ad_account` | Get ad account details (status, currency, spend cap, balance) |
-| `meta_list_campaigns` | List campaigns with status filtering and pagination |
-| `meta_get_campaign` | Get a single campaign's full details |
-| `meta_create_campaign` | Create a campaign (supports Advantage+ Shopping for OUTCOME_SALES) |
-| `meta_update_campaign` | Update campaign name, status, budget, or migrate to Advantage+ |
-| `meta_delete_campaign` | Delete a campaign |
-| `meta_migrate_campaign_to_advantage_plus` | Migrate a campaign to Advantage+ Shopping (keeps campaign ID) |
-| `meta_list_adsets` | List ad sets with filtering |
-| `meta_get_adset` | Get a single ad set's targeting and budget details |
-| `meta_create_adset` | Create an ad set with targeting, budget, and placement_soft_opt_out |
-| `meta_update_adset` | Update ad set targeting, budget, or placement_soft_opt_out |
-| `meta_delete_adset` | Delete an ad set |
-| `meta_list_ads` | List ads with status filtering |
-| `meta_get_ad` | Get a single ad's details |
-| `meta_create_ad` | Create an ad linking a creative to an ad set |
-| `meta_update_ad` | Update ad name, status, or creative |
-| `meta_delete_ad` | Delete an ad |
-| `meta_list_ad_creatives` | List ad creatives |
-| `meta_get_ad_creative` | Get a single creative's details |
-| `meta_create_ad_creative` | Create an ad creative with text, image, and link |
-| `meta_get_ad_preview` | Preview how an ad will appear in different placements |
-| `meta_get_ad_rule` | Get details for a specific automated ad rule |
-| `meta_get_ad_account_users` | List users with access to the ad account |
-| `meta_upload_ad_image` | Upload an image for use in ad creatives |
-| `meta_list_ad_images` | List previously uploaded ad images |
-| `meta_upload_ad_video` | Upload a video for use in ad creatives |
-| `meta_list_ad_videos` | List previously uploaded ad videos |
-| `meta_search_targeting_interests` | Search for interest-based targeting options |
-| `meta_search_targeting_geolocations` | Search for location-based targeting (countries, cities, zips) |
-| `meta_search_targeting_demographics` | Search for demographic targeting options |
-| `meta_browse_targeting_categories` | Browse all available targeting categories |
-| `meta_get_reach_estimate` | Estimate potential audience size for a targeting spec |
-| `meta_get_delivery_estimate` | Estimate ad delivery for a given budget and targeting |
-| `meta_get_leadgen_leads` | Get submitted leads from a lead generation form |
-| `meta_get_minimum_budgets` | Get minimum daily and lifetime budgets for an ad account by currency and bid strategy |
-| `meta_list_leadgen_forms` | List lead generation forms for a Facebook Page |
-| `meta_list_offline_event_sets` | List offline conversion event sets for an ad account |
-| `meta_list_pixels` | List Meta Pixels for conversion tracking |
-| `meta_create_pixel` | Create a new pixel |
-| `meta_get_pixel` | Get pixel details (name, cookie status, matching fields) |
-| `meta_get_pixel_stats` | Get event volume stats over time (verify pixel is firing) |
-| `meta_update_pixel` | Update pixel settings (name, cookies, matching, data use) |
-| `meta_delete_pixel` | Delete a pixel |
-| `meta_share_pixel` | Share pixel access with another ad account |
-| `meta_get_pixel_events` | Get recent test events for debugging |
-| `meta_list_custom_conversions` | List custom conversion events |
-| `meta_create_custom_conversion` | Create a custom conversion from pixel events |
-| `meta_list_saved_audiences` | List saved audiences |
-| `meta_create_saved_audience` | Create a reusable saved audience |
-| `meta_delete_saved_audience` | Delete a saved audience |
-| `meta_list_ad_rules` | List automated ad rules |
-| `meta_create_ad_rule` | Create an automated rule (e.g., pause ads over $5 CPA) |
-| `meta_delete_ad_rule` | Delete an automated rule |
-| `meta_list_ad_labels` | List ad labels for organization |
-| `meta_create_ad_label` | Create an ad label |
-| `meta_get_ad_account_activity` | Get the ad account's activity log |
-| `meta_list_business_assets` | List pages, ad accounts, IG accounts, and pixels across Business Manager |
-| `meta_create_ad_study` | Create an A/B test to compare campaigns or ad sets |
-| `meta_get_ad_studies` | List A/B tests for an ad account |
-| `meta_get_ad_study_results` | Get A/B test results with winner and confidence level |
-| `meta_send_offline_event` | Send an offline conversion event for in-store purchases, phone orders, or other offline conversions |
-
-### Threads — 22 tools
-
-Full Threads API — publishing with GIFs, reply controls, location tagging, and analytics.
-
-| Tool | Description |
-|:---|:---|
-| `threads_get_profile` | Get your Threads profile info |
-| `threads_get_posts` | Get your recent posts with pagination |
-| `threads_get_post` | Get a single post by ID (includes reply_audience) |
-| `threads_search` | Search your posts by keyword |
-| `threads_publish_text` | Publish a text post (with reply control and location) |
-| `threads_publish_image` | Publish an image post (with reply control and location) |
-| `threads_publish_video` | Publish a video post with auto-polling (with reply control and location) |
-| `threads_publish_carousel` | Publish a carousel (parallel creation, with reply control) |
-| `threads_publish_link` | Publish a post with a link attachment (with reply control) |
-| `threads_publish_gif` | Publish a GIF post via GIPHY URL |
-| `threads_delete_post` | Delete a post |
-| `threads_get_replies` | Get replies to a post |
-| `threads_get_conversation` | Get the full conversation tree for a post |
-| `threads_get_followers` | List followers of the authenticated Threads user |
-| `threads_get_following` | List accounts the authenticated Threads user is following |
-| `threads_get_mentions` | Get posts that @mention you |
-| `threads_get_media_children` | Get individual items in a carousel post |
-| `threads_hide_reply` | Hide or unhide a reply |
-| `threads_repost` | Repost a Threads post |
-| `threads_get_post_insights` | Get metrics for a specific post (views, likes, replies, etc.) |
-| `threads_get_user_insights` | Get account-level metrics with demographic breakdowns |
-| `threads_check_rate_limits` | Check your current publishing rate limit status |
-
-### Commerce — 10 tools
-
-Product catalog management for Facebook and Instagram shops.
-
-| Tool | Description |
-|:---|:---|
-| `meta_list_product_catalogs` | List product catalogs for a business |
-| `meta_get_product_catalog` | Get catalog details and product count |
-| `meta_list_products` | List products in a catalog with filtering |
-| `meta_get_product` | Get a single product's full details |
-| `meta_create_product` | Add a product to a catalog |
-| `meta_create_product_feed` | Create a product feed to automatically sync products from a URL |
-| `meta_update_product` | Update product details (name, price, availability, etc.) |
-| `meta_delete_product` | Delete a product from a catalog |
-| `meta_list_product_feeds` | List product feeds for a catalog |
-| `meta_list_product_sets` | List product sets (subgroups) in a catalog |
-
-### Conversions API — 2 tools
-
-Server-side event tracking for conversion optimization.
-
-| Tool | Description |
-|:---|:---|
-| `meta_send_conversion_event` | Send a server-side conversion event (Purchase, Lead, etc.) to a pixel |
-| `meta_test_conversion_events` | Test CAPI setup without affecting production data |
-
-### Audiences — 5 tools
-
-Custom and lookalike audience management for ad targeting.
-
-| Tool | Description |
-|:---|:---|
-| `meta_list_custom_audiences` | List custom audiences in an ad account |
-| `meta_get_custom_audience` | Get audience details (size, delivery status) |
-| `meta_create_custom_audience` | Create a custom audience |
-| `meta_create_lookalike_audience` | Create a lookalike audience from a source audience |
-| `meta_delete_custom_audience` | Delete a custom audience |
-
-### Insights — 4 tools
-
-Performance analytics across the ad hierarchy with 37 metrics, 15 date presets, and 8 breakdown dimensions.
-
-| Tool | Description |
-|:---|:---|
-| `meta_get_account_insights` | Ad account performance — spend, impressions, reach, clicks, CTR, CPM, CPC, conversions, ROAS, video completion, quality rankings |
-| `meta_get_campaign_insights` | Per-campaign performance with the same comprehensive metrics |
-| `meta_get_adset_insights` | Per-ad-set performance |
-| `meta_get_ad_insights` | Per-ad performance |
-
-### Charts — 2 tools
-
-Generate visual charts from data for reports and presentations.
-
-| Tool | Description |
-|:---|:---|
-| `meta_generate_chart` | Create bar, line, pie, doughnut, radar charts as PNG images |
-| `meta_generate_comparison_chart` | Generate side-by-side comparison charts (A/B, period-over-period) |
-
-### Ad Library & Utility — 4 tools
-
-| Tool | Description |
-|:---|:---|
-| `meta_search_ad_library` | Search any advertiser's active ads — public transparency API |
-| `meta_debug_token` | Inspect your token: type, validity, expiry, permissions, associated app and user |
-| `meta_health_check` | Check server health: token status, cached tokens, API connectivity |
-| `meta_search_places` | Search Facebook Places (locations) by name or coordinates for post tagging |
-
----
-
-## Configuration
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `META_ACCESS_TOKEN` | Yes | None | Long-lived Meta Graph API token for Facebook Pages, Instagram, Ads Manager, Commerce, Conversions API, Audiences, Insights, and utility tools. |
-| `THREADS_ACCESS_TOKEN` | No | None | Threads API token. Required only for Threads publishing, replies, and insights tools. |
-| `MCP_TRANSPORT` | No | `stdio` | Set to `streamable-http` for a remotely reachable MCP endpoint. |
-| `MCP_HTTP_HOST` | No | `127.0.0.1` | HTTP bind address. Use `0.0.0.0` inside Docker or a hosted environment. |
-| `MCP_HTTP_PORT` | No | `3000` | HTTP server port. |
-| `MCP_HTTP_PATH` | No | `/mcp` | Streamable HTTP endpoint path. |
-| `MCP_HTTP_AUTH_TOKEN` | Recommended for HTTP | None | Shared bearer token required by remote HTTP clients. Required when binding outside loopback unless explicitly overridden. |
-| `MCP_HTTP_ALLOW_UNAUTHENTICATED` | No | `false` | Explicitly allow unauthenticated non-loopback HTTP hosting. Avoid for internet-facing deployments. |
-| `MCP_HTTP_ALLOWED_ORIGINS` | No | Localhost origins | Comma-separated browser origins allowed to call the HTTP endpoint. |
-| `META_GRAPH_API_BASE_URL` | No | `https://graph.facebook.com` | Meta Graph API host, without the version path. Useful for proxies and testing. |
-| `META_GRAPH_API_VERSION` | No | `v21.0` | Meta Graph API version. |
-| `THREADS_API_BASE_URL` | No | `https://graph.threads.net` | Threads API host, without the version path. |
-| `THREADS_API_VERSION` | No | `v1.0` | Threads API version. |
-| `QUICKCHART_BASE_URL` | No | `https://quickchart.io/chart` | Chart rendering endpoint. |
-
-### 1. Create a Meta App
-
-Go to [developers.facebook.com](https://developers.facebook.com) → **My Apps** → **Create App** → choose **Business** type. Add **Facebook Login**, **Pages API**, **Instagram Graph API**, and **Marketing API**.
-
-### 2. Generate Tokens
-
-Get a token from the [Graph API Explorer](https://developers.facebook.com/tools/explorer), then exchange it for a long-lived token (60 days):
-
-```bash
-curl "https://graph.facebook.com/oauth/access_token?\
-grant_type=fb_exchange_token&\
-client_id=YOUR_APP_ID&\
-client_secret=YOUR_APP_SECRET&\
-fb_exchange_token=SHORT_LIVED_TOKEN"
-```
-
-> **For permanent access**, create a System User token in Business Manager → System Users.
-
-**Threads** uses a separate token via `graph.threads.net` OAuth — see [Threads API docs](https://developers.facebook.com/docs/threads/get-started).
-
-### 1Password Integration
-
-If `META_ACCESS_TOKEN` or `THREADS_ACCESS_TOKEN` are not set in the environment, the server automatically attempts to resolve them from [1Password CLI](https://developer.1password.com/docs/cli/):
-
-```
-op://Development/Meta Access Token/credential
-op://Development/Threads Access Token/credential
-```
-
-This means you can skip setting env vars entirely if you have `op` installed and a service account or session active. The fallback adds ~1-2s to startup per token and is silently skipped if 1Password is unavailable.
-
-### 3. Grant Permissions
-
-| Permission | Required for |
-|:---|:---|
-| `pages_show_list` | Listing pages |
-| `pages_read_engagement` | Page insights, reactions |
-| `pages_manage_posts` | Creating, editing, deleting posts |
-| `pages_manage_metadata` | Page settings, webhooks, profile picture, cover photo |
-| `pages_read_user_content` | Tagged posts, visitor posts, ratings |
-| `pages_messaging` | Reading and sending messages, automated responses |
-| `instagram_basic` | Instagram account info |
-| `instagram_content_publish` | Publishing photos, reels, stories, carousels |
-| `instagram_manage_insights` | Instagram analytics |
-| `instagram_manage_comments` | Comment management |
-| `instagram_manage_messages` | Instagram DMs |
-| `ads_read` | Reading campaigns, ad sets, ads, insights |
-| `ads_management` | Creating and managing ads, A/B tests |
-| `business_management` | Business Manager assets, product catalogs |
-| `catalog_management` | Product catalog CRUD |
-| `threads_basic` | Threads profile and posts |
-| `threads_content_publish` | Publishing to Threads |
-| `threads_manage_insights` | Threads analytics |
-| `threads_manage_replies` | Managing Threads replies |
-
-### 4. Connect to Your MCP Client
-
-**Claude Code** — add to `~/.claude/settings.json`:
-
-```json
-{
-  "mcpServers": {
-    "meta": {
-      "command": "node",
-      "args": ["/absolute/path/to/open-mcp-servers/packages/meta/dist/index.js"],
-      "env": {
-        "META_ACCESS_TOKEN": "your_long_lived_token",
-        "THREADS_ACCESS_TOKEN": "your_threads_token"
-      }
-    }
-  }
-}
-```
-
-Works with any MCP client that supports **stdio transport**. `THREADS_ACCESS_TOKEN` is optional — only needed for Threads tools.
-
-## Self-hosted HTTP
-
-Use Streamable HTTP when the MCP server should run independently on a customer server, VM, Docker host, or private network. The server exposes one MCP endpoint and a health check:
-
-```text
-MCP endpoint: https://your-domain.example/mcp
-Health check: https://your-domain.example/healthz
-```
-
-For a local HTTP instance:
-
-```bash
-MCP_TRANSPORT=streamable-http \
-MCP_HTTP_AUTH_TOKEN="choose-a-long-random-token" \
-npm start
-```
-
-The server listens on `http://127.0.0.1:3000/mcp` by default. For a remote deployment, set `MCP_HTTP_HOST=0.0.0.0`, keep `MCP_HTTP_AUTH_TOKEN` configured, and put the server behind HTTPS.
-
-An MCP client that supports remote servers can then connect to the endpoint using its HTTP configuration. The exact configuration key varies by client, but the shape is typically:
-
-```json
-{
-  "mcpServers": {
-    "meta-remote": {
-      "url": "https://your-domain.example/mcp",
-      "headers": {
-        "Authorization": "Bearer choose-a-long-random-token"
-      }
-    }
-  }
-}
-```
-
-The HTTP server refuses to bind to a non-loopback address without authentication unless `MCP_HTTP_ALLOW_UNAUTHENTICATED=true` is explicitly set. Do not use that override on an internet-facing deployment.
-
-### Docker and Docker Compose
-
-The repository includes a production Dockerfile and Compose configuration:
-
-```bash
+~~~bash
 cp .env.example .env
-# Edit .env and set META_ACCESS_TOKEN and MCP_HTTP_AUTH_TOKEN.
+# Set META_ACCESS_TOKEN and MCP_HTTP_AUTH_TOKEN in .env.
 docker compose up -d --build
 curl http://localhost:3000/healthz
-```
+~~~
 
-For production, terminate TLS at a reverse proxy or load balancer and forward `/mcp` to the container. Keep access tokens and `MCP_HTTP_AUTH_TOKEN` in the hosting platform's secret manager rather than committing `.env`.
+The default Meta endpoint is http://127.0.0.1:3000/mcp.
 
----
+The unified GitHub executable also supports Streamable HTTP. It creates an isolated official-server process per MCP session:
 
-## How It Works
+~~~bash
+MCP_TRANSPORT=streamable-http \
+MCP_HTTP_HOST=127.0.0.1 \
+GITHUB_MCP_HTTP_PORT=3001 \
+MCP_HTTP_AUTH_TOKEN="choose-a-long-random-token" \
+GITHUB_PERSONAL_ACCESS_TOKEN="your_github_pat" \
+github-mcp-server
+~~~
 
-The server starts without any tokens configured — no crashes, no "failed" status in MCP settings. When you call a tool without proper auth, you get a clear setup message.
+The default GitHub endpoint is http://127.0.0.1:3001/github/mcp, with a health check at /healthz. For non-loopback hosting, configure MCP_HTTP_AUTH_TOKEN and put the service behind HTTPS. The HTTP bearer token is separate from the GitHub or Meta API token.
 
-**First call should always be `meta_list_pages`** — this caches the page-scoped access tokens required for all Page and Instagram operations.
+See the connector-specific [GitHub Streamable HTTP guide](packages/github/docs/streamable-http.md) and [Meta docs](packages/meta/docs/README.md) for all environment variables and client-specific examples.
 
-### Error Handling
+## Configuration and security
 
-Every error message tells you what went wrong, why, and how to fix it:
+### Credentials
 
-| What happened | What you see |
-|:---|:---|
-| No token set | Step-by-step setup instructions with link to Graph Explorer |
-| Token expired (code 190) | Direct link to regenerate at developers.facebook.com |
-| Missing permission (code 10/200) | Names the exact permission needed and where to grant it |
-| Rate limited (429) | Tells you to wait, links to Meta's rate limit docs |
-| Page token missing | Reminds you to call `meta_list_pages` first |
-| Network unreachable | "Cannot reach graph.facebook.com — check your connection" |
+| Connector | Required server variable | Optional variable |
+| --- | --- | --- |
+| Meta | `META_ACCESS_TOKEN` | `THREADS_ACCESS_TOKEN` |
+| GitHub | `GITHUB_PERSONAL_ACCESS_TOKEN` | `GITHUB_MCP_IMAGE`, `GITHUB_HOST`, `GITHUB_API_URL`, `GITHUB_UPLOADS_URL` |
+| HTTP | — | `MCP_TRANSPORT`, `MCP_HTTP_HOST`, `MCP_HTTP_PORT`, `MCP_HTTP_PATH`, `MCP_HTTP_AUTH_TOKEN`, `MCP_HTTP_ALLOWED_ORIGINS` |
 
-### Token Refresh
+Use a fine-grained GitHub PAT with only the repository, organization, and account permissions required by your workflows. Operations such as releases, tags, workflow dispatches, pull-request approvals, package publishing, and organization secrets still depend on the PAT, token type, SSO, organization policy, and the caller's GitHub role.
 
-Long-lived tokens expire after 60 days. Use `meta_debug_token` to check expiry, then refresh:
+The connector:
 
-```bash
-curl "https://graph.facebook.com/oauth/access_token?\
-grant_type=fb_exchange_token&\
-client_id=APP_ID&client_secret=APP_SECRET&\
-fb_exchange_token=CURRENT_TOKEN"
-```
+- Reads credentials from the server environment (with an optional 1Password CLI fallback configured by the entrypoint).
+- Does not accept a PAT as a tool argument.
+- Does not elevate permissions or bypass third-party API policies.
+- Validates GitHub REST paths as relative API paths and does not forward the PAT to arbitrary hosts.
+- Encrypts supported GitHub secret values locally with LibSodium before sending them to GitHub; plaintext secret values are not included in API request bodies.
 
-> For permanent tokens, create a System User in Business Manager → System Users.
+Never commit .env files, PATs, access tokens, secret values, private keys, or customer data. For HTTP deployments, store credentials in the host's secret manager and protect the endpoint with HTTPS and a separate bearer token.
 
----
+## Documentation
 
-## Architecture
+| Area | Documentation |
+| --- | --- |
+| Repository documentation index | [docs/README.md](docs/README.md) |
+| GitHub connector overview and setup | [packages/github/docs/README.md](packages/github/docs/README.md) |
+| GitHub tool discovery and local catalog | [packages/github/docs/tools.md](packages/github/docs/tools.md) |
+| GitHub encrypted secrets | [packages/github/docs/secrets.md](packages/github/docs/secrets.md) |
+| GitHub architecture | [packages/github/docs/architecture.md](packages/github/docs/architecture.md) |
+| GitHub release workflow | [packages/github/docs/release-workflows.md](packages/github/docs/release-workflows.md) |
+| Meta connector overview and setup | [packages/meta/docs/README.md](packages/meta/docs/README.md) |
+| Meta authentication | [packages/meta/docs/authentication/access-tokens.md](packages/meta/docs/authentication/access-tokens.md) |
+| Meta API guides | [packages/meta/docs/README.md](packages/meta/docs/README.md) |
 
-```
-src/
-├── index.ts              Server entry point (stdio or Streamable HTTP)
-├── server-factory.ts     Creates and registers the Meta MCP server
-├── http-server.ts        Streamable HTTP server, auth, sessions, and health check
-├── constants.ts          API versions, base URLs, field constants
-├── types.ts              TypeScript interfaces for Meta entities
-├── services/
-│   ├── api.ts            MetaApiClient — dual Graph + Threads API
-│   └── utils.ts          Error handling, formatting, shared schemas
-└── tools/
-    ├── pages.ts          52 Facebook Page tools
-    ├── instagram.ts      37 Instagram tools
-    ├── ads.ts            62 Ads Manager tools
-    ├── threads.ts        22 Threads tools
-    ├── commerce.ts       10 Commerce/Catalog tools
-    ├── conversions.ts     2 Conversions API tools
-    ├── audiences.ts       5 Audience tools
-    ├── insights.ts        4 Insight tools
-    ├── charts.ts          2 Chart generation tools
-    ├── ad_library.ts      1 Ad Library tool
-    └── utility.ts         3 Utility tools
-```
+## Repository layout
 
-### Key Design Decisions
-
-- **Dual API client** — Handles both `graph.facebook.com/v21.0` and `graph.threads.net/v1.0` with separate base URLs and tokens
-- **Page token caching** — `meta_list_pages` caches page-scoped tokens; subsequent tools look them up by page ID
-- **Two-step container publishing** — Instagram and Threads require container → publish flow; the server handles this automatically with video processing polling
-- **Parallel carousel processing** — All carousel items created concurrently via `Promise.allSettled`; partial failures report which items succeeded
-- **Zod strict schemas** — Every tool uses strict Zod schemas for type-safe parameter validation
-- **Dual output format** — Every read tool supports `response_format: "markdown"` or `"json"`
-- **Graceful auth** — Server starts without tokens, returns setup instructions on first tool call instead of crashing
-- **Chart generation** — QuickChart integration for rendering data as PNG images for reports
-
-### GitHub connector
-
-`github-mcp-server` is a local stdio unified proxy around [GitHub's official MCP Server](https://github.com/github/github-mcp-server). It requires Docker and `GITHUB_PERSONAL_ACCESS_TOKEN`, starts the official image with all toolsets and Insiders enabled, and registers the upstream tools alongside this project's full-API tools. The PAT remains the permission boundary.
-
-The full GitHub documentation is organized under [`packages/github/docs/`](packages/github/docs/README.md).
-
-The same executable supports `MCP_TRANSPORT=streamable-http`; each HTTP MCP session receives an isolated upstream official-server process and is cleaned up when the session closes.
-
-`github-full-api-mcp-server` remains available as a lightweight API-only variant; the default unified server already includes these full-API tools.
-
-The unified server also includes native encrypted-secret tools for Actions organization/repository/environment secrets, Dependabot organization/repository secrets, Codespaces organization/repository/user secrets, and agent organization/repository secrets. Secret values are sealed locally with LibSodium before the encrypted request is sent to GitHub; plaintext values are never included in API request bodies.
-
-For GitHub Enterprise Server, configure `GITHUB_HOST` for the official connector; configure `GITHUB_API_URL` (normally `https://HOST/api/v3`) and `GITHUB_UPLOADS_URL` (normally `https://HOST/api/uploads`) for the full API connector.
-
----
-
-## API Coverage
-
-Targets **Meta Graph API v21.0** and **Threads API v1.0** by default; both versions and their base URLs can be overridden through environment variables.
-
-| API | Status |
-|:---|:---|
-| Facebook Pages API | **Comprehensive** — posts, comments, messaging, insights, events, media, Stories, Reels, Live Video, automated responses |
-| Instagram Graph API | **Comprehensive** — publishing, scheduling, comments, DMs, broadcast channels, hashtags, business discovery, insights |
-| Marketing API | **Comprehensive** — campaigns, ad sets, ads, creatives, targeting, audiences, pixels, CAPI, A/B testing, Advantage+ |
-| Threads API | **Comprehensive** — publishing (text, image, video, GIF, carousel, link), reply controls, location, insights |
-| Commerce API | **Supported** — product catalog CRUD, product sets |
-| Conversions API | **Supported** — server-side event tracking with test mode |
-| Ad Library API | **Supported** — public transparency search |
-| WhatsApp Business API | Not covered — separate infrastructure and token flow |
-
----
+~~~text
+open-mcp-servers/
+├── packages/
+│   ├── meta/
+│   │   ├── src/                  # Meta MCP implementation
+│   │   ├── tests/
+│   │   ├── docs/
+│   │   ├── package.json
+│   │   └── README.md
+│   └── github/
+│       ├── src/                  # Unified and API-only GitHub implementation
+│       ├── tests/
+│       ├── docs/
+│       ├── package.json
+│       └── README.md
+├── .github/workflows/
+│   ├── ci.yml                    # Tests and builds both packages
+│   ├── release.yml               # Shared v-N release orchestration
+│   ├── publish-npm.yml           # Reusable npm publishing job
+│   └── publish-ghcr.yml          # Reusable Meta image publishing job
+├── Dockerfile                    # Meta Streamable HTTP image
+├── docker-compose.yml            # Local Meta HTTP deployment
+├── docs/                         # Documentation index
+├── package.json                  # Workspace scripts and dependency lock
+└── .env.example                  # Non-secret configuration template
+~~~
 
 ## Development
 
-Use the same commands for local development and contribution checks:
+Install dependencies and run the checks from the repository root:
 
-```bash
-npm install
-npm test            # 52 tests
-npm run build       # TypeScript compilation
-npm run test:watch  # Development mode
-```
+~~~bash
+npm ci
+npm test
+npm run build
+~~~
 
-Development conventions: Zod `.strict()` schemas, `response_format` parameter on read tools, and `errorResult()` for tool errors with `isError: true`.
+Useful focused commands:
 
-### Adding a connector
+~~~bash
+npm run build:meta
+npm run build:github
+npm run test:watch
+npm run clean
+~~~
 
-New connectors should keep application-specific code isolated from the shared MCP entry point:
+Connector-specific changes belong under packages/<connector>/. Add or update a focused test with every behavior change, keep tool schemas strict, and document new configuration or permissions alongside the connector that owns them.
 
-1. Add an API client under `packages/<name>/src/services/` with environment-based credential configuration.
-2. Add one or more tool modules under `packages/<name>/src/tools/` with strict Zod input schemas.
-3. Register the tools from the connector's `server-factory.ts` and expose its own `index.ts` entrypoint.
-4. Document setup, permissions, and supported operations in `docs/` and the README.
-5. Add unit and integration coverage before opening a pull request.
+## Releases
 
-Keep credentials in environment variables or a local secret manager. Never commit tokens, private keys, or customer data.
+The repository uses one sequential repository tag, such as v-1 or v-2, for a release event. Package versions remain independent:
+
+- @open-work-org/meta-mcp-server is versioned in packages/meta/package.json.
+- @open-work-org/github-mcp-server is versioned in packages/github/package.json.
+
+Pushing a new v-N tag runs the release workflow. It tests and builds both packages, detects which connector paths changed, publishes only changed npm package versions, publishes the Meta image only when its runtime inputs changed, and creates one GitHub Release with a manifest of the artifacts. An unchanged package is not republished.
+
+Before creating a release tag:
+
+1. Bump the version of every changed package.
+2. Run npm ci, npm test, and npm run build.
+3. Push the release commit to main.
+4. Create the next unused v-N tag on that commit.
+
+Required repository configuration is documented in [GitHub release workflows](packages/github/docs/release-workflows.md). The npm publish job expects NPM_TOKEN; GitHub Actions uses its short-lived GITHUB_TOKEN for the GitHub Release and GHCR permissions declared in the workflow.
 
 ## License
 
-This project is available under the [MIT License](LICENSE). It is free to use for personal or commercial projects, including modification, hosting, and redistribution, subject to the license notice. Third-party APIs and services remain subject to their own terms, quotas, and authentication requirements.
+This project is available under the [MIT License](LICENSE). Third-party APIs, tokens, quotas, and platform terms remain the responsibility of the operator.
 
----
-
-<p align="center">
-  <sub>Not affiliated with or endorsed by Meta Platforms, Inc.</sub>
-</p>
-
----
-
-<p align="center">
-  <sub>
-    Maintained by <a href="https://github.com/open-work-org">Open Work Org</a>
-  </sub>
-</p>
+Not affiliated with or endorsed by Meta Platforms, Inc. or GitHub, Inc.
