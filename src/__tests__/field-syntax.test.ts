@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { IG_MEDIA_FIELDS } from "../constants.js";
+import { IG_MEDIA_FIELDS, INSIGHT_FIELDS } from "../constants.js";
 import { MetaPaginatedResponse } from "../types.js";
 
 describe("API field syntax correctness", () => {
@@ -25,6 +25,12 @@ describe("API field syntax correctness", () => {
   });
 
   describe("Insights API fields", () => {
+    it("does not request the unsupported unique_impressions field", () => {
+      expect(INSIGHT_FIELDS.split(",")).toContain("clicks");
+      expect(INSIGHT_FIELDS.split(",")).toContain("reach");
+      expect(INSIGHT_FIELDS.split(",")).not.toContain("unique_impressions");
+    });
+
     it("CTR is not multiplied — returned as percentage directly", () => {
       // Meta returns CTR as "2.5" meaning 2.5%, NOT 0.025
       const ctrValue = "2.5";
