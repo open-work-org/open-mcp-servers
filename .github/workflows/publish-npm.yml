@@ -1,10 +1,23 @@
-name: Publish npm package
+name: Publish npm packages
 
 on:
-  push:
-    tags:
-      - 'v*'
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit to publish
+        required: true
+        type: string
+      meta_changed:
+        description: Publish the Meta package
+        required: true
+        type: boolean
+      github_changed:
+        description: Publish the GitHub package
+        required: true
+        type: boolean
+    secrets:
+      NPM_TOKEN:
+        required: false
 
 permissions:
   contents: read
@@ -12,12 +25,14 @@ permissions:
 
 jobs:
   publish:
-    name: Publish to npm
+    name: Publish changed npm packages
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out repository
+      - name: Check out release commit
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -29,13 +44,34 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build package
-        run: npm run build
+      - name: Publish Meta package when version is new
+        if: inputs.meta_changed
+        run: |
+          if [[ -z "${NODE_AUTH_TOKEN:-}" ]]; then
+            echo "::error::NPM_TOKEN is required when the Meta package changed."
+            exit 1
+          fi
+          version="$(node -p "require('./packages/meta/package.json').version")"
+          if npm view "@open-work-org/meta-mcp-server@${version}" version >/dev/null 2>&1; then
+            echo "@open-work-org/meta-mcp-server@${version} already exists; skipping publish."
+          else
+            npm publish --workspace @open-work-org/meta-mcp-server --access public --provenance
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Run tests
-        run: npm test
-
-      - name: Publish package
-        run: npm publish --access public --provenance
+      - name: Publish GitHub package when version is new
+        if: inputs.github_changed
+        run: |
+          if [[ -z "${NODE_AUTH_TOKEN:-}" ]]; then
+            echo "::error::NPM_TOKEN is required when the GitHub package changed."
+            exit 1
+          fi
+          version="$(node -p "require('./packages/github/package.json').version")"
+          if npm view "@open-work-org/github-mcp-server@${version}" version >/dev/null 2>&1; then
+            echo "@open-work-org/github-mcp-server@${version} already exists; skipping publish."
+          else
+            npm publish --workspace @open-work-org/github-mcp-server --access public --provenance
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

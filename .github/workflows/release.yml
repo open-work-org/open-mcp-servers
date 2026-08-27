@@ -1,0 +1,269 @@
+name: Release Open MCP Servers
+
+on:
+  push:
+    tags:
+      - 'v-[0-9]*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing v-N tag to release
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  detect:
+    name: Detect release components
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.detect.outputs.release_tag }}
+      target_sha: ${{ steps.detect.outputs.target_sha }}
+      previous_tag: ${{ steps.detect.outputs.previous_tag }}
+      meta_changed: ${{ steps.detect.outputs.meta_changed }}
+      github_changed: ${{ steps.detect.outputs.github_changed }}
+      meta_image_changed: ${{ steps.detect.outputs.meta_image_changed }}
+      has_release_changes: ${{ steps.detect.outputs.has_release_changes }}
+      meta_version: ${{ steps.detect.outputs.meta_version }}
+      github_version: ${{ steps.detect.outputs.github_version }}
+    steps:
+      - name: Check out release ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Detect changed components
+        id: detect
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          tag="$RELEASE_TAG"
+          if [[ ! "$tag" =~ ^v-[0-9]+$ ]]; then
+            echo "::error::Release tag must use sequential v-N format, for example v-1 or v-2; received '$tag'."
+            exit 1
+          fi
+
+          target_sha="$(git rev-parse "${tag}^{commit}")"
+          previous_tag="$(git describe --tags --abbrev=0 "${target_sha}^" 2>/dev/null || true)"
+
+          if [[ -n "$previous_tag" ]]; then
+            changed_files="$(git diff --name-only "$previous_tag" "$target_sha")"
+          else
+            changed_files="$(git ls-tree -r --name-only "$target_sha")"
+          fi
+
+          meta_changed=false
+          github_changed=false
+          meta_image_changed=false
+
+          while IFS= read -r path; do
+            case "$path" in
+              packages/meta/src/*|packages/meta/docs/*|packages/meta/README.md|packages/meta/package.json)
+                meta_changed=true
+                ;;
+              packages/github/src/*|packages/github/docs/*|packages/github/README.md|packages/github/package.json)
+                github_changed=true
+                ;;
+            esac
+
+            case "$path" in
+              packages/meta/src/*|packages/meta/package.json|packages/meta/tsconfig.json|Dockerfile|package.json|package-lock.json)
+                meta_image_changed=true
+                ;;
+            esac
+          done <<< "$changed_files"
+
+          has_release_changes=false
+          if [[ "$meta_changed" == true || "$github_changed" == true || "$meta_image_changed" == true ]]; then
+            has_release_changes=true
+          fi
+
+          if [[ "$has_release_changes" != true ]]; then
+            echo "::error::No publishable connector or image changes were found between '$previous_tag' and '$tag'."
+            exit 1
+          fi
+
+          meta_version="$(node -p "require('./packages/meta/package.json').version")"
+          github_version="$(node -p "require('./packages/github/package.json').version")"
+
+          {
+            echo "release_tag=$tag"
+            echo "target_sha=$target_sha"
+            echo "previous_tag=$previous_tag"
+            echo "meta_changed=$meta_changed"
+            echo "github_changed=$github_changed"
+            echo "meta_image_changed=$meta_image_changed"
+            echo "has_release_changes=$has_release_changes"
+            echo "meta_version=$meta_version"
+            echo "github_version=$github_version"
+          } >> "$GITHUB_OUTPUT"
+
+  validate:
+    name: Validate release
+    needs: detect
+    if: needs.detect.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.detect.outputs.target_sha }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build both packages
+        run: npm run build
+
+      - name: Validate changed package versions
+        env:
+          PREVIOUS_TAG: ${{ needs.detect.outputs.previous_tag }}
+          META_CHANGED: ${{ needs.detect.outputs.meta_changed }}
+          GITHUB_CHANGED: ${{ needs.detect.outputs.github_changed }}
+        run: |
+          set -euo pipefail
+
+          validate_version() {
+            local package_dir="$1"
+            local changed="$2"
+            local current_version
+            local previous_version=""
+
+            current_version="$(node -p "require('./${package_dir}/package.json').version")"
+            if [[ -n "$PREVIOUS_TAG" ]] && git cat-file -e "$PREVIOUS_TAG:${package_dir}/package.json" 2>/dev/null; then
+              previous_version="$(git show "$PREVIOUS_TAG:${package_dir}/package.json" | node -e 'let input=""; process.stdin.on("data", chunk => input += chunk); process.stdin.on("end", () => process.stdout.write(JSON.parse(input).version));')"
+            fi
+
+            node - "$current_version" "$previous_version" "$changed" "$package_dir" <<'NODE'
+            const [current, previous, changed, packageDir] = process.argv.slice(2);
+            const parse = (value) => {
+              const match = /^([0-9]+)\.([0-9]+)\.([0-9]+)(?:[-+].*)?$/.exec(value || "");
+              return match ? match.slice(1, 4).map(Number) : null;
+            };
+            const currentParts = parse(current);
+            if (!currentParts) {
+              console.error(`Invalid semver for ${packageDir}: ${current}`);
+              process.exit(1);
+            }
+            if (changed !== "true" || !previous) process.exit(0);
+            const previousParts = parse(previous);
+            if (!previousParts) {
+              console.error(`Invalid previous semver for ${packageDir}: ${previous}`);
+              process.exit(1);
+            }
+            const isGreater = currentParts.some((part, index) => part > previousParts[index] && currentParts.slice(0, index).every((value, i) => value === previousParts[i]));
+            if (!isGreater) {
+              console.error(`${packageDir} changed but version did not increase: ${previous} -> ${current}`);
+              process.exit(1);
+            }
+            NODE
+          }
+
+          validate_version packages/meta "$META_CHANGED"
+          validate_version packages/github "$GITHUB_CHANGED"
+
+  publish_npm:
+    name: Publish npm packages
+    needs: [detect, validate]
+    if: needs.validate.result == 'success'
+    uses: ./.github/workflows/publish-npm.yml
+    with:
+      ref: ${{ needs.detect.outputs.target_sha }}
+      meta_changed: ${{ needs.detect.outputs.meta_changed == 'true' }}
+      github_changed: ${{ needs.detect.outputs.github_changed == 'true' }}
+    secrets: inherit
+
+  publish_ghcr:
+    name: Publish Meta container image
+    needs: [detect, validate]
+    if: needs.validate.result == 'success'
+    uses: ./.github/workflows/publish-ghcr.yml
+    with:
+      ref: ${{ needs.detect.outputs.target_sha }}
+      release_tag: ${{ needs.detect.outputs.release_tag }}
+      meta_image_changed: ${{ needs.detect.outputs.meta_image_changed == 'true' }}
+
+  release:
+    name: Create or finalize GitHub Release
+    needs: [detect, validate, publish_npm, publish_ghcr]
+    if: >-
+      always() &&
+      needs.detect.result == 'success' &&
+      needs.validate.result == 'success' &&
+      needs.publish_npm.result == 'success' &&
+      needs.publish_ghcr.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.detect.outputs.target_sha }}
+
+      - name: Write release manifest
+        env:
+          RELEASE_TAG: ${{ needs.detect.outputs.release_tag }}
+          TARGET_SHA: ${{ needs.detect.outputs.target_sha }}
+          PREVIOUS_TAG: ${{ needs.detect.outputs.previous_tag }}
+          META_CHANGED: ${{ needs.detect.outputs.meta_changed }}
+          GITHUB_CHANGED: ${{ needs.detect.outputs.github_changed }}
+          META_IMAGE_CHANGED: ${{ needs.detect.outputs.meta_image_changed }}
+          META_VERSION: ${{ needs.detect.outputs.meta_version }}
+          GITHUB_VERSION: ${{ needs.detect.outputs.github_version }}
+        run: |
+          cat > release-manifest.json <<EOF
+          {
+            "repository_tag": "$RELEASE_TAG",
+            "commit": "$TARGET_SHA",
+            "previous_tag": "$PREVIOUS_TAG",
+            "packages": {
+              "@open-work-org/meta-mcp-server": {"version": "$META_VERSION", "changed": $META_CHANGED},
+              "@open-work-org/github-mcp-server": {"version": "$GITHUB_VERSION", "changed": $GITHUB_CHANGED}
+            },
+            "images": {
+              "ghcr.io/open-work-org/meta-mcp-server": {"tag": "$RELEASE_TAG", "changed": $META_IMAGE_CHANGED}
+            }
+          }
+          EOF
+
+          cat > release-notes.md <<EOF
+          ## Published artifacts
+
+          - Meta npm package: @open-work-org/meta-mcp-server@$META_VERSION ($META_CHANGED)
+          - GitHub npm package: @open-work-org/github-mcp-server@$GITHUB_VERSION ($GITHUB_CHANGED)
+          - Meta container image: ghcr.io/open-work-org/meta-mcp-server:$RELEASE_TAG ($META_IMAGE_CHANGED)
+
+          The repository tag is shared; npm package versions remain independently versioned.
+          EOF
+
+      - name: Create or finalize one GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.detect.outputs.release_tag }}
+        run: |
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --title "Open MCP Servers $RELEASE_TAG" --notes-file release-notes.md --draft=false
+          else
+            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --title "Open MCP Servers $RELEASE_TAG" --notes-file release-notes.md
+          fi
+          gh release upload "$RELEASE_TAG" release-manifest.json --repo "$GITHUB_REPOSITORY" --clobber

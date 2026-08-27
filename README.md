@@ -10,13 +10,14 @@
 </p>
 
 <p align="center">
-  <code>200 Meta tools included</code> &bull;
+  <code>200 Meta tools + full GitHub API</code> &bull;
   <code>stdio transport</code> &bull;
   <code>self-hosted</code>
 </p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@open-work-org/meta-mcp-server"><img src="https://img.shields.io/npm/v/@open-work-org/meta-mcp-server?style=flat-square&color=f5a542" alt="npm"></a>
+  <a href="https://www.npmjs.com/package/@open-work-org/github-mcp-server"><img src="https://img.shields.io/npm/v/@open-work-org/github-mcp-server?style=flat-square&color=f5a542" alt="npm"></a>
   <a href="https://github.com/open-work-org/open-mcp-servers/releases"><img src="https://img.shields.io/github/v/release/open-work-org/open-mcp-servers?style=flat-square&color=f5a542&label=release" alt="Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-f5a542?style=flat-square" alt="License"></a>
 </p>
@@ -38,7 +39,7 @@
 
 Open MCP Servers is a home for self-hosted [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) connectors. Run the server on your own machine or infrastructure, connect it to an MCP-compatible AI client, and keep credentials and application data under your control.
 
-This repository currently includes a production-ready Meta connector covering Facebook Pages, Instagram, Threads, Ads Manager, Commerce, Conversions API, audiences, and insights. The connector architecture is intentionally straightforward so the community can add connectors for other applications without depending on a hosted gateway or a vendor-controlled middle layer.
+This repository includes a production-ready Meta connector covering Facebook Pages, Instagram, Threads, Ads Manager, Commerce, Conversions API, audiences, and insights, plus a GitHub connector for PAT-authorized GitHub REST and GraphQL access. The connector architecture is intentionally straightforward so the community can add connectors for other applications without depending on a hosted gateway or a vendor-controlled middle layer.
 
 You are free to use, modify, fork, host, and redistribute this project under the [MIT License](LICENSE). You are responsible for the credentials, API access, hosting environment, and terms of the third-party applications you connect.
 
@@ -56,11 +57,42 @@ Every tool returns actionable error messages — not cryptic API codes. Token ex
 
 ## Quick Start
 
+### GitHub
+
+The default GitHub connector proxies GitHub's official MCP Server with `GITHUB_TOOLSETS=all` and Insiders enabled, exposing every individually named upstream tool alongside this project's full REST/GraphQL/release tools in one MCP connection. Use a fine-grained token and authorize only the repositories and permissions you require. Docker must be available because the official image is executed locally.
+
+See the complete [GitHub package documentation](packages/github/docs/README.md) for architecture, configuration, tools, encrypted secrets, Streamable HTTP, and release planning. Meta documentation is grouped under [packages/meta/docs/](packages/meta/docs/README.md).
+
+Install the GitHub package independently from Meta:
+
+```bash
+npm install -g @open-work-org/github-mcp-server
+```
+
+That one GitHub package provides both executables: `github-mcp-server` (the unified official-upstream plus local API connector) and `github-full-api-mcp-server` (the local REST/GraphQL/release/secret connector without Docker).
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "command": "github-mcp-server",
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "your_fine_grained_pat"
+      }
+    }
+  }
+}
+```
+
+For Streamable HTTP, start the same executable with `MCP_TRANSPORT=streamable-http`. It listens on `http://127.0.0.1:3001/github/mcp` by default (override with `GITHUB_MCP_HTTP_PORT` and `GITHUB_MCP_HTTP_PATH`). When binding beyond loopback, set `MCP_HTTP_AUTH_TOKEN`; unauthenticated non-loopback exposure is refused.
+
+The unified connection includes the official local toolsets (Actions, issues, pull requests, repositories, projects, security, discussions, notifications, and more), experimental/Insiders tools where the upstream server provides them, and the full PAT-authorized REST/GraphQL/release tools. GitHub's remote-only Copilot Spaces and support-search toolsets remain GitHub-hosted capabilities, not PAT-only local tools. Set `GITHUB_MCP_IMAGE` to a pinned official image tag or digest for reproducible deployments.
+
 ### Install with MCPB
 
 For Claude Desktop and other MCPB-compatible clients, download a local bundle from the [latest release](https://github.com/open-work-org/open-mcp-servers/releases) when one is available:
 
-The npm package and source install below are the portable options for self-hosting.
+The published npm packages and source install below are the portable options for self-hosting.
 
 The bundle includes the Meta favicon, production runtime dependencies, and setup prompts for Meta and optional Threads access tokens.
 
@@ -608,7 +640,7 @@ This means you can skip setting env vars entirely if you have `op` installed and
   "mcpServers": {
     "meta": {
       "command": "node",
-      "args": ["/absolute/path/to/meta-mcp-server/dist/index.js"],
+      "args": ["/absolute/path/to/open-mcp-servers/packages/meta/dist/index.js"],
       "env": {
         "META_ACCESS_TOKEN": "your_long_lived_token",
         "THREADS_ACCESS_TOKEN": "your_threads_token"
@@ -742,6 +774,20 @@ src/
 - **Graceful auth** — Server starts without tokens, returns setup instructions on first tool call instead of crashing
 - **Chart generation** — QuickChart integration for rendering data as PNG images for reports
 
+### GitHub connector
+
+`github-mcp-server` is a local stdio unified proxy around [GitHub's official MCP Server](https://github.com/github/github-mcp-server). It requires Docker and `GITHUB_PERSONAL_ACCESS_TOKEN`, starts the official image with all toolsets and Insiders enabled, and registers the upstream tools alongside this project's full-API tools. The PAT remains the permission boundary.
+
+The full GitHub documentation is organized under [`packages/github/docs/`](packages/github/docs/README.md).
+
+The same executable supports `MCP_TRANSPORT=streamable-http`; each HTTP MCP session receives an isolated upstream official-server process and is cleaned up when the session closes.
+
+`github-full-api-mcp-server` remains available as a lightweight API-only variant; the default unified server already includes these full-API tools.
+
+The unified server also includes native encrypted-secret tools for Actions organization/repository/environment secrets, Dependabot organization/repository secrets, Codespaces organization/repository/user secrets, and agent organization/repository secrets. Secret values are sealed locally with LibSodium before the encrypted request is sent to GitHub; plaintext values are never included in API request bodies.
+
+For GitHub Enterprise Server, configure `GITHUB_HOST` for the official connector; configure `GITHUB_API_URL` (normally `https://HOST/api/v3`) and `GITHUB_UPLOADS_URL` (normally `https://HOST/api/uploads`) for the full API connector.
+
 ---
 
 ## API Coverage
@@ -778,9 +824,9 @@ Development conventions: Zod `.strict()` schemas, `response_format` parameter on
 
 New connectors should keep application-specific code isolated from the shared MCP entry point:
 
-1. Add an API client under `src/services/` with environment-based credential configuration.
-2. Add one or more tool modules under `src/tools/` with strict Zod input schemas.
-3. Register the tools from `src/index.ts`.
+1. Add an API client under `packages/<name>/src/services/` with environment-based credential configuration.
+2. Add one or more tool modules under `packages/<name>/src/tools/` with strict Zod input schemas.
+3. Register the tools from the connector's `server-factory.ts` and expose its own `index.ts` entrypoint.
 4. Document setup, permissions, and supported operations in `docs/` and the README.
 5. Add unit and integration coverage before opening a pull request.
 

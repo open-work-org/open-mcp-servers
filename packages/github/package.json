@@ -1,0 +1,45 @@
+{
+  "name": "@open-work-org/github-mcp-server",
+  "version": "1.0.0",
+  "description": "Self-hosted GitHub MCP connector combining the official GitHub MCP Server with full PAT-authorized REST, GraphQL, release, tag, and secret tools.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "github-mcp-server": "dist/index.js",
+    "github-full-api-mcp-server": "dist/full-api-index.js"
+  },
+  "files": [
+    "dist/",
+    "docs/"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-work-org/open-mcp-servers.git",
+    "directory": "packages/github"
+  },
+  "license": "MIT",
+  "author": "Open Work Org",
+  "keywords": [
+    "mcp",
+    "github",
+    "github-api",
+    "model-context-protocol",
+    "streamable-http"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "axios": "^1.20.0",
+    "libsodium-wrappers": "^0.8.4",
+    "zod": "^3.25.76"
+  }
+}

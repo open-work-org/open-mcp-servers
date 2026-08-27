@@ -1,0 +1,46 @@
+{
+  "name": "@open-work-org/meta-mcp-server",
+  "version": "1.0.2",
+  "description": "Self-hosted Meta MCP connector covering Facebook Pages, Instagram, Threads, Ads Manager, Commerce, Conversions, and Insights.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "meta-mcp-server": "dist/index.js"
+  },
+  "files": [
+    "dist/",
+    "docs/"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-work-org/open-mcp-servers.git",
+    "directory": "packages/meta"
+  },
+  "license": "MIT",
+  "author": "Open Work Org",
+  "keywords": [
+    "mcp",
+    "meta",
+    "facebook",
+    "instagram",
+    "threads",
+    "ads-manager",
+    "graph-api",
+    "model-context-protocol"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "axios": "^1.20.0",
+    "zod": "^3.25.76"
+  }
+}

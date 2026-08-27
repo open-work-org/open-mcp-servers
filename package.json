@@ -1,23 +1,22 @@
 {
-  "name": "@open-work-org/meta-mcp-server",
-  "version": "1.0.1",
-  "description": "Self-hosted Meta MCP connector with local stdio and remote Streamable HTTP hosting, covering 200 tools across Facebook Pages, Instagram, Threads, Ads Manager, Commerce, and more",
+  "name": "open-mcp-servers-workspace",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Workspace containing the Open Work Meta and GitHub MCP packages.",
   "type": "module",
-  "main": "dist/index.js",
-  "bin": {
-    "meta-mcp-server": "dist/index.js"
-  },
-  "files": [
-    "dist/"
+  "workspaces": [
+    "packages/meta",
+    "packages/github"
   ],
   "scripts": {
-    "start": "node dist/index.js",
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc",
-    "prepublishOnly": "npm run build",
+    "start": "node packages/meta/dist/index.js",
+    "dev": "tsx watch packages/meta/src/index.ts",
+    "build": "tsc -b packages/meta packages/github",
+    "build:meta": "npm run build --workspace @open-work-org/meta-mcp-server",
+    "build:github": "npm run build --workspace @open-work-org/github-mcp-server",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf packages/meta/dist packages/github/dist packages/meta/tsconfig.tsbuildinfo packages/github/tsconfig.tsbuildinfo"
   },
   "repository": {
     "type": "git",
@@ -28,26 +27,12 @@
   "keywords": [
     "mcp",
     "meta",
-    "facebook",
-    "instagram",
-    "threads",
-    "ads-manager",
-    "graph-api",
-    "model-context-protocol",
-    "streamable-http",
-    "claude",
-    "ai-tools",
-    "self-hosted",
-    "open-source",
-    "connectors"
+    "github",
+    "connectors",
+    "model-context-protocol"
   ],
   "engines": {
     "node": ">=18"
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
-    "axios": "^1.20.0",
-    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
