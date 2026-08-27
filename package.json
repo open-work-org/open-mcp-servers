@@ -1,6 +1,6 @@
 {
   "name": "@open-work-org/meta-mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Self-hosted Meta MCP connector with local stdio and remote Streamable HTTP hosting, covering 200 tools across Facebook Pages, Instagram, Threads, Ads Manager, Commerce, and more",
   "type": "module",
   "main": "dist/index.js",
