@@ -177,7 +177,7 @@ jobs:
               console.error(`${packageDir} changed but version did not increase: ${previous} -> ${current}`);
               process.exit(1);
             }
-            NODE
+          NODE
           }
 
           validate_version packages/meta "$META_CHANGED"
