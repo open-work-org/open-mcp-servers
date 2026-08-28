@@ -27,7 +27,7 @@ The repository is a small npm workspaces monorepo. Each connector is independent
 | Connector | npm package | What it provides | Runtime notes |
 | --- | --- | --- | --- |
 | Meta | [`@open-work-org/meta-mcp-server`](https://www.npmjs.com/package/@open-work-org/meta-mcp-server) | 200 purpose-built tools for Facebook Pages, Instagram, Threads, Ads Manager, Commerce, Conversions API, audiences, insights, and charts | Stdio package; the root Docker image and Compose file expose this connector over Streamable HTTP |
-| GitHub | [`@open-work-org/github-mcp-server`](https://www.npmjs.com/package/@open-work-org/github-mcp-server) | GitHub's official MCP tools discovered at startup, plus local REST, GraphQL, release, tag, asset, and encrypted-secret tools | Unified mode runs the official GitHub MCP image through Docker; API-only mode does not require Docker |
+| GitHub | [`@open-work-org/github-mcp-server`](https://www.npmjs.com/package/@open-work-org/github-mcp-server) | GitHub's official MCP tools discovered at startup, plus local REST, GraphQL, release, tag, asset, and encrypted-secret tools | Available as npm or as `ghcr.io/open-work-org/github-mcp-server`; the container needs no Docker socket |
 
 Tool availability is permission- and version-dependent. A PAT never grants more access than GitHub or Meta grants to that token. For GitHub, the upstream tool catalog follows the selected official image, so its count can change without a source-code change in this repository.
 
@@ -46,7 +46,7 @@ Start with the [Meta package README](packages/meta/README.md) and [Meta document
 
 The GitHub package provides two executables:
 
-- `github-mcp-server` — unified mode. It starts the official GitHub MCP Server locally, enables the configured toolsets, imports its paginated `tools/list` catalog, and exposes those tools together with the local tools in one MCP connection. Docker is required.
+- `github-mcp-server` — unified mode. It starts the official GitHub MCP Server, enables the configured toolsets, imports its paginated `tools/list` catalog, and exposes those tools together with the local tools in one MCP connection. The npm entrypoint uses Docker by default; the container bundles the official binary and needs no Docker socket. If the upstream server is unavailable, native API tools remain available.
 - `github-full-api-mcp-server` — API-only mode. It exposes the local REST/GraphQL/release/tag/asset/secret tools without starting Docker.
 
 The local GitHub tools include `github_rest_api_request` and `github_graphql` escape hatches, so documented endpoints that do not yet have a dedicated tool can still be reached using the PAT. Native helpers cover releases, Git references, release assets, and encrypted Actions, Dependabot, Codespaces, and Agent secrets.
@@ -194,7 +194,7 @@ See the connector-specific [GitHub Streamable HTTP guide](packages/github/docs/s
 | Connector | Required server variable | Optional variable |
 | --- | --- | --- |
 | Meta | `META_ACCESS_TOKEN` | `THREADS_ACCESS_TOKEN` |
-| GitHub | `GITHUB_PERSONAL_ACCESS_TOKEN` | `GITHUB_MCP_IMAGE`, `GITHUB_HOST`, `GITHUB_API_URL`, `GITHUB_UPLOADS_URL` |
+| GitHub | `GITHUB_PERSONAL_ACCESS_TOKEN` | `GITHUB_MCP_IMAGE`, `OPEN_MCP_GITHUB_UPSTREAM_COMMAND`, `OPEN_MCP_GITHUB_UPSTREAM_ARGS`, `GITHUB_HOST`, `GITHUB_API_URL`, `GITHUB_UPLOADS_URL` |
 | HTTP | — | `MCP_TRANSPORT`, `MCP_HTTP_HOST`, `MCP_HTTP_PORT`, `MCP_HTTP_PATH`, `MCP_HTTP_AUTH_TOKEN`, `MCP_HTTP_ALLOWED_ORIGINS` |
 
 Use a fine-grained GitHub PAT with only the repository, organization, and account permissions required by your workflows. Operations such as releases, tags, workflow dispatches, pull-request approvals, package publishing, and organization secrets still depend on the PAT, token type, SSO, organization policy, and the caller's GitHub role.
@@ -244,8 +244,9 @@ open-mcp-servers/
 │   ├── ci.yml                    # Tests and builds both packages
 │   ├── release.yml               # Shared v-N release orchestration
 │   ├── publish-npm.yml           # Reusable npm publishing job
-│   └── publish-ghcr.yml          # Reusable Meta image publishing job
+│   └── publish-ghcr.yml          # Reusable Meta and GitHub image publishing jobs
 ├── Dockerfile                    # Meta Streamable HTTP image
+├── Dockerfile.github             # GitHub Streamable HTTP image
 ├── docker-compose.yml            # Local Meta HTTP deployment
 ├── docs/                         # Documentation index
 ├── package.json                  # Workspace scripts and dependency lock

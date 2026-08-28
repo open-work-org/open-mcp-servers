@@ -4,7 +4,7 @@
 
 The repository publishes two npm packages from the workspace: `@open-work-org/meta-mcp-server` and `@open-work-org/github-mcp-server`. A single sequential `v-N` repository tag (for example, `v-1` or `v-2`) drives `.github/workflows/release.yml`, which detects changed components, validates package version bumps, publishes changed artifacts, and creates or finalizes one GitHub Release.
 
-The current root `Dockerfile` builds the Meta package and starts its entrypoint. Do not treat it as a GitHub image definition.
+The root `Dockerfile` builds the Meta package. `Dockerfile.github` builds the GitHub connector image, bundles the official GitHub MCP binary, and starts the Streamable HTTP entrypoint without requiring a Docker socket on the deployment host.
 
 ## Recommended release lanes
 
@@ -31,6 +31,4 @@ Actions should use its short-lived `GITHUB_TOKEN` for the GitHub Release and GHC
 
 ## Container runtime caveat
 
-The unified GitHub entrypoint currently starts the official GitHub MCP image through Docker. A standalone GitHub image therefore needs either a Docker-enabled host, a carefully controlled Docker socket, or a future direct-binary launch mode. A dedicated `Dockerfile.github` should be added only after choosing that runtime model.
-
-Until then, publish the npm package or run the GitHub HTTP server on a host with Docker available.
+The npm unified entrypoint starts the official GitHub MCP image through Docker by default. The standalone GitHub image uses direct-binary launch mode and keeps its native API tools available if the upstream process cannot be started.

@@ -55,39 +55,78 @@ async function listAllTools(client: Client): Promise<Array<Record<string, any>>>
 
 export type UnifiedGitHubServer = { server: McpServer; close: () => Promise<void> };
 
+function upstreamEnvironment(token: string): Record<string, string> {
+  return {
+    ...process.env,
+    GITHUB_PERSONAL_ACCESS_TOKEN: token,
+    GITHUB_TOOLSETS: process.env.GITHUB_TOOLSETS ?? "all",
+    GITHUB_INSIDERS: process.env.GITHUB_INSIDERS ?? "true",
+  } as Record<string, string>;
+}
+
+function upstreamArguments(): string[] {
+  const value = process.env.OPEN_MCP_GITHUB_UPSTREAM_ARGS;
+  if (!value) return [];
+  try {
+    const args = JSON.parse(value);
+    if (!Array.isArray(args) || !args.every((arg) => typeof arg === "string")) {
+      throw new Error("must be a JSON array of strings");
+    }
+    return args;
+  } catch (error) {
+    throw new Error(`OPEN_MCP_GITHUB_UPSTREAM_ARGS ${(error as Error).message}`);
+  }
+}
+
+function createUpstreamTransport(token: string): StdioClientTransport {
+  const command = process.env.OPEN_MCP_GITHUB_UPSTREAM_COMMAND?.trim();
+  const env = upstreamEnvironment(token);
+  if (command) {
+    return new StdioClientTransport({ command, args: upstreamArguments(), env, stderr: "inherit" });
+  }
+
+  const image = process.env.GITHUB_MCP_IMAGE ?? "ghcr.io/github/github-mcp-server";
+  return new StdioClientTransport({
+    command: "docker",
+    args: ["run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "-e", "GITHUB_TOOLSETS", "-e", "GITHUB_INSIDERS", ...(process.env.GITHUB_HOST ? ["-e", "GITHUB_HOST"] : []), image],
+    env,
+    stderr: "inherit",
+  });
+}
+
 /** Creates the unified server used by both stdio and Streamable HTTP transports. */
 export async function createUnifiedGitHubServer(token: string): Promise<UnifiedGitHubServer> {
   if (!token) throw new Error("GITHUB_PERSONAL_ACCESS_TOKEN is required to start the GitHub connector.");
 
-  const image = process.env.GITHUB_MCP_IMAGE ?? "ghcr.io/github/github-mcp-server";
-  const upstreamTransport = new StdioClientTransport({
-    command: "docker",
-    args: ["run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "-e", "GITHUB_TOOLSETS", "-e", "GITHUB_INSIDERS", ...(process.env.GITHUB_HOST ? ["-e", "GITHUB_HOST"] : []), image],
-    env: { ...process.env, GITHUB_PERSONAL_ACCESS_TOKEN: token, GITHUB_TOOLSETS: "all", GITHUB_INSIDERS: "true" } as Record<string, string>,
-    stderr: "inherit",
-  });
-  const upstream = new Client({ name: "open-mcp-github-unified", version: "1.0.0" });
-  await upstream.connect(upstreamTransport);
-
   const server = new McpServer({ name: "github-mcp-server", version: "1.0.0" });
   registerGitHubTools(server, new GitHubApiClient(token));
-  for (const tool of await listAllTools(upstream)) {
-    server.registerTool(tool.name, {
-      title: tool.title ?? tool.name,
-      description: tool.description,
-      inputSchema: schemaToZod((tool.inputSchema ?? {}) as JsonSchema),
-      annotations: tool.annotations,
-    }, async (args) => {
-      try { return await upstream.callTool({ name: tool.name, arguments: args as Record<string, unknown> }) as any; }
-      catch (error) { return { content: [{ type: "text" as const, text: githubErrorMessage(error) }], isError: true }; }
-    });
+  let upstream: Client | undefined;
+
+  try {
+    upstream = new Client({ name: "open-mcp-github-unified", version: "1.0.0" });
+    await upstream.connect(createUpstreamTransport(token));
+    for (const tool of await listAllTools(upstream)) {
+      server.registerTool(tool.name, {
+        title: tool.title ?? tool.name,
+        description: tool.description,
+        inputSchema: schemaToZod((tool.inputSchema ?? {}) as JsonSchema),
+        annotations: tool.annotations,
+      }, async (args) => {
+        try { return await upstream!.callTool({ name: tool.name, arguments: args as Record<string, unknown> }) as any; }
+        catch (error) { return { content: [{ type: "text" as const, text: githubErrorMessage(error) }], isError: true }; }
+      });
+    }
+  } catch (error) {
+    console.error(`GitHub upstream MCP server is unavailable; continuing with native GitHub API tools only: ${githubErrorMessage(error)}`);
+    if (upstream) await upstream.close().catch(() => undefined);
+    upstream = undefined;
   }
 
   return {
     server,
     close: async () => {
       await server.close();
-      await upstream.close();
+      await upstream?.close();
     },
   };
 }

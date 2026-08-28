@@ -31,6 +31,7 @@ jobs:
       meta_changed: ${{ steps.detect.outputs.meta_changed }}
       github_changed: ${{ steps.detect.outputs.github_changed }}
       meta_image_changed: ${{ steps.detect.outputs.meta_image_changed }}
+      github_image_changed: ${{ steps.detect.outputs.github_image_changed }}
       has_release_changes: ${{ steps.detect.outputs.has_release_changes }}
       meta_version: ${{ steps.detect.outputs.meta_version }}
       github_version: ${{ steps.detect.outputs.github_version }}
@@ -66,6 +67,7 @@ jobs:
           meta_changed=false
           github_changed=false
           meta_image_changed=false
+          github_image_changed=false
 
           while IFS= read -r path; do
             case "$path" in
@@ -81,11 +83,14 @@ jobs:
               packages/meta/src/*|packages/meta/package.json|packages/meta/tsconfig.json|Dockerfile|package.json|package-lock.json)
                 meta_image_changed=true
                 ;;
+              packages/github/src/*|packages/github/package.json|packages/github/tsconfig.json|Dockerfile.github|package.json|package-lock.json)
+                github_image_changed=true
+                ;;
             esac
           done <<< "$changed_files"
 
           has_release_changes=false
-          if [[ "$meta_changed" == true || "$github_changed" == true || "$meta_image_changed" == true ]]; then
+          if [[ "$meta_changed" == true || "$github_changed" == true || "$meta_image_changed" == true || "$github_image_changed" == true ]]; then
             has_release_changes=true
           fi
 
@@ -104,6 +109,7 @@ jobs:
             echo "meta_changed=$meta_changed"
             echo "github_changed=$github_changed"
             echo "meta_image_changed=$meta_image_changed"
+            echo "github_image_changed=$github_image_changed"
             echo "has_release_changes=$has_release_changes"
             echo "meta_version=$meta_version"
             echo "github_version=$github_version"
@@ -195,7 +201,7 @@ jobs:
     secrets: inherit
 
   publish_ghcr:
-    name: Publish Meta container image
+    name: Publish connector container images
     needs: [detect, validate]
     if: needs.validate.result == 'success'
     uses: ./.github/workflows/publish-ghcr.yml
@@ -203,6 +209,7 @@ jobs:
       ref: ${{ needs.detect.outputs.target_sha }}
       release_tag: ${{ needs.detect.outputs.release_tag }}
       meta_image_changed: ${{ needs.detect.outputs.meta_image_changed == 'true' }}
+      github_image_changed: ${{ needs.detect.outputs.github_image_changed == 'true' }}
 
   release:
     name: Create or finalize GitHub Release
@@ -228,6 +235,7 @@ jobs:
           META_CHANGED: ${{ needs.detect.outputs.meta_changed }}
           GITHUB_CHANGED: ${{ needs.detect.outputs.github_changed }}
           META_IMAGE_CHANGED: ${{ needs.detect.outputs.meta_image_changed }}
+          GITHUB_IMAGE_CHANGED: ${{ needs.detect.outputs.github_image_changed }}
           META_VERSION: ${{ needs.detect.outputs.meta_version }}
           GITHUB_VERSION: ${{ needs.detect.outputs.github_version }}
         run: |
@@ -241,7 +249,8 @@ jobs:
               "@open-work-org/github-mcp-server": {"version": "$GITHUB_VERSION", "changed": $GITHUB_CHANGED}
             },
             "images": {
-              "ghcr.io/open-work-org/meta-mcp-server": {"tag": "$RELEASE_TAG", "changed": $META_IMAGE_CHANGED}
+              "ghcr.io/open-work-org/meta-mcp-server": {"tag": "$RELEASE_TAG", "changed": $META_IMAGE_CHANGED},
+              "ghcr.io/open-work-org/github-mcp-server": {"tag": "$RELEASE_TAG", "changed": $GITHUB_IMAGE_CHANGED}
             }
           }
           EOF
@@ -252,6 +261,7 @@ jobs:
           - Meta npm package: @open-work-org/meta-mcp-server@$META_VERSION ($META_CHANGED)
           - GitHub npm package: @open-work-org/github-mcp-server@$GITHUB_VERSION ($GITHUB_CHANGED)
           - Meta container image: ghcr.io/open-work-org/meta-mcp-server:$RELEASE_TAG ($META_IMAGE_CHANGED)
+          - GitHub container image: ghcr.io/open-work-org/github-mcp-server:$RELEASE_TAG ($GITHUB_IMAGE_CHANGED)
 
           The repository tag is shared; npm package versions remain independently versioned.
           EOF

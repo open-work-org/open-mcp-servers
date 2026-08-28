@@ -13,7 +13,8 @@ The upstream tool catalog is discovered at startup through MCP `tools/list`, inc
 
 | Executable | Transport | Tool surface | Docker required |
 | --- | --- | --- | --- |
-| `github-mcp-server` | stdio or Streamable HTTP | Official upstream tools + local tools | Yes |
+| `github-mcp-server` (npm) | stdio or Streamable HTTP | Official upstream tools + local tools | Yes, by default |
+| `ghcr.io/open-work-org/github-mcp-server` | Streamable HTTP | Official upstream tools + local tools | No |
 | `github-full-api-mcp-server` | stdio | Local REST/GraphQL/release/secret tools | No |
 
 The unified process starts the official server as a child process, connects to it over stdio, and proxies official calls through the local MCP server. Local tools call GitHub directly through the repository's API client.
@@ -22,7 +23,7 @@ The unified process starts the official server as a child process, connects to i
 
 - Node.js 18 or newer.
 - A GitHub personal access token with the permissions required for the operations you intend to perform.
-- Docker available to the host when using the unified executable.
+- Docker available to the host when using the unified npm executable. The published container bundles the upstream binary and does not require Docker on the host.
 
 Use a fine-grained PAT where GitHub supports the required operations. Some GitHub APIs and registry operations may require a classic PAT, a GitHub App, or an organization/enterprise role.
 

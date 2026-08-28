@@ -1,6 +1,6 @@
 {
   "name": "@open-work-org/github-mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Self-hosted GitHub MCP connector combining the official GitHub MCP Server with full PAT-authorized REST, GraphQL, release, tag, and secret tools.",
   "type": "module",
   "main": "dist/index.js",

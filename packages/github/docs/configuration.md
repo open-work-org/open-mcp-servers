@@ -6,6 +6,8 @@
 | --- | --- | --- | --- |
 | `GITHUB_PERSONAL_ACCESS_TOKEN` | Yes | — | PAT used by both the official and local GitHub tools. |
 | `GITHUB_MCP_IMAGE` | No | `ghcr.io/github/github-mcp-server` | Official upstream image to run. Pin a tag or digest for reproducible deployments. |
+| `OPEN_MCP_GITHUB_UPSTREAM_COMMAND` | No | — | Direct upstream executable. The published container sets this to its bundled official GitHub MCP binary. |
+| `OPEN_MCP_GITHUB_UPSTREAM_ARGS` | No | `[]` | JSON array of arguments for the direct upstream executable; the published container uses `["stdio"]`. |
 | `GITHUB_HOST` | No | GitHub.com | GitHub Enterprise Server host passed to the official server. |
 | `GITHUB_API_URL` | No | `https://api.github.com` | REST/GraphQL API base used by local tools. |
 | `GITHUB_UPLOADS_URL` | No | `https://uploads.github.com` | Release-asset upload base used by local tools. |
