@@ -2,14 +2,16 @@ import { randomUUID } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { createUnifiedGitHubServer, type UnifiedGitHubServer } from "./unified.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { GitHubApiClient } from "./services/api.js";
+import { createGitHubMcpServer } from "./server-factory.js";
 
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 3001;
 const DEFAULT_PATH = "/github/mcp";
 const MAX_BODY_BYTES = 1024 * 1024;
 
-type Session = { transport: StreamableHTTPServerTransport; unified: UnifiedGitHubServer; close: () => Promise<void> };
+type Session = { transport: StreamableHTTPServerTransport; server: McpServer; close: () => Promise<void> };
 
 function envNumber(name: string, fallback: number): number {
   const value = Number.parseInt(process.env[name] ?? "", 10);
@@ -67,7 +69,7 @@ function authorizationIsValid(req: IncomingMessage, expectedToken: string | unde
 }
 
 async function createSession(token: string, sessions: Map<string, Session>): Promise<Session> {
-  const unified = await createUnifiedGitHubServer(token);
+  const server = createGitHubMcpServer(new GitHubApiClient(token));
   let session: Session;
   let closed = false;
   const transport = new StreamableHTTPServerTransport({
@@ -76,20 +78,20 @@ async function createSession(token: string, sessions: Map<string, Session>): Pro
   });
   session = {
     transport,
-    unified,
+    server,
     close: async () => {
       if (closed) return;
       closed = true;
       await transport.close();
-      await unified.close();
+      await server.close();
     },
   };
   transport.onclose = () => {
     if (transport.sessionId) sessions.delete(transport.sessionId);
-    if (!closed) { closed = true; void unified.close(); }
+    if (!closed) { closed = true; void server.close(); }
   };
   transport.onerror = (error) => console.error("GitHub MCP HTTP transport error:", error);
-  await unified.server.connect(transport);
+  await server.connect(transport);
   return session;
 }
 

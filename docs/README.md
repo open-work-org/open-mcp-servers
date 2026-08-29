@@ -4,7 +4,7 @@ This directory contains connector-specific documentation and API references.
 
 ## Connectors
 
-- [GitHub package](../packages/github/docs/README.md) — official GitHub MCP tools, PAT-authorized REST/GraphQL access, encrypted secrets, and Streamable HTTP.
+- [GitHub package](../packages/github/docs/README.md) — PAT-authorized REST/GraphQL access, encrypted secrets, and Streamable HTTP.
 - [Meta package](../packages/meta/docs/README.md) — Facebook Pages, Instagram, Ads Manager, Threads, Commerce, Conversions API, and Insights.
 
 ## Meta API references

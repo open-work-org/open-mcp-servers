@@ -2,35 +2,29 @@
 
 ## What it provides
 
-The unified connector exposes one MCP server containing:
-
-1. Every tool returned by the configured official GitHub MCP Server image.
-2. Local high-value tools for REST, GraphQL, releases, Git references, release assets, and encrypted secrets.
-
-The upstream tool catalog is discovered at startup through MCP `tools/list`, including paginated responses. Official names and input schemas are preserved. The catalog therefore follows the pinned or selected upstream image rather than a hard-coded count.
+The connector exposes one native MCP server containing local tools for REST, GraphQL, releases, Git references, release assets, and encrypted secrets.
 
 ## Runtime modes
 
 | Executable | Transport | Tool surface | Docker required |
 | --- | --- | --- | --- |
-| `github-mcp-server` (npm) | stdio or Streamable HTTP | Official upstream tools + local tools | Yes, by default |
-| `ghcr.io/open-work-org/github-mcp-server` | Streamable HTTP | Official upstream tools + local tools | No |
-| `github-full-api-mcp-server` | stdio | Local REST/GraphQL/release/secret tools | No |
+| `github-mcp-server` (npm) | stdio | Local REST/GraphQL/release/secret tools | No |
+| `ghcr.io/open-work-org/github-mcp-server` | Streamable HTTP | Local REST/GraphQL/release/secret tools | Docker to run the image |
 
-The unified process starts the official server as a child process, connects to it over stdio, and proxies official calls through the local MCP server. Local tools call GitHub directly through the repository's API client.
+Both entrypoints start the same native server. Local tools call GitHub directly through the repository's API client; no upstream process or binary is downloaded or started.
 
 ## Requirements
 
 - Node.js 18 or newer.
 - A GitHub personal access token with the permissions required for the operations you intend to perform.
-- Docker available to the host when using the unified npm executable. The published container bundles the upstream binary and does not require Docker on the host.
+- Docker is not required for the npm executable. Docker is only needed when choosing to run the published container image.
 
 Use a fine-grained PAT where GitHub supports the required operations. Some GitHub APIs and registry operations may require a classic PAT, a GitHub App, or an organization/enterprise role.
 
 ## Permission boundary
 
-The connector does not elevate permissions. Every official and local API call uses the configured PAT, and GitHub evaluates that token against the token owner's role, token permissions, repository selection, organization policies, SSO, and endpoint requirements.
+The connector does not elevate permissions. Every API call uses the configured PAT, and GitHub evaluates that token against the token owner's role, token permissions, repository selection, organization policies, SSO, and endpoint requirements.
 
 ## GitHub Enterprise Server
 
-Set `GITHUB_HOST` for the official upstream server. Set `GITHUB_API_URL` and `GITHUB_UPLOADS_URL` for the local REST client when using GitHub Enterprise Server.
+Set `GITHUB_API_URL` and `GITHUB_UPLOADS_URL` when using GitHub Enterprise Server.

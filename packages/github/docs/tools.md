@@ -2,12 +2,7 @@
 
 ## Viewing the complete tool list
 
-MCP clients discover tools with the standard `tools/list` method. In the unified connector, the returned list contains both:
-
-- Official tools discovered from the upstream GitHub MCP server.
-- Local tools registered by `../src/tools/github.ts`.
-
-Official names are preserved. Local tools use the `github_` prefix, which makes them easy to distinguish in an MCP client tool browser. The upstream count can change when the selected official image changes.
+MCP clients discover the native tools with the standard `tools/list` method. The returned list is registered by `../src/tools/github.ts` and is the same for stdio and Streamable HTTP deployments.
 
 ## Local tool catalog
 
@@ -42,7 +37,7 @@ Secret values are encrypted locally before the GitHub request is sent. See [Encr
 
 ## REST escape-hatch examples
 
-The REST tool is useful when GitHub has an endpoint that is not represented by a dedicated local or upstream tool. For example:
+The REST tool is useful when GitHub has an endpoint that is not represented by a dedicated native tool. For example:
 
 Create a workflow dispatch:
 
@@ -75,4 +70,4 @@ The tool accepts only relative paths beginning with a single `/`; it does not fo
 
 ## Tool availability caveats
 
-The unified server exposes only tools advertised by the selected official image. GitHub-hosted or remote-only capabilities are not automatically local tools. Package registry transfers, webhook delivery, OAuth flows, and endpoints requiring a GitHub App may need a separate client or deployment component.
+The REST escape hatch covers documented JSON-based GitHub REST endpoints permitted by the PAT. Package registry transfers, webhook delivery, OAuth flows, binary or multipart operations, and endpoints requiring a GitHub App may need a separate client or deployment component.

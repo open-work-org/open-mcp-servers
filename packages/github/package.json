@@ -1,12 +1,11 @@
 {
   "name": "@open-work-org/github-mcp-server",
-  "version": "1.0.1",
-  "description": "Self-hosted GitHub MCP connector combining the official GitHub MCP Server with full PAT-authorized REST, GraphQL, release, tag, and secret tools.",
+  "version": "1.0.2",
+  "description": "Self-hosted GitHub MCP connector with full PAT-authorized REST, GraphQL, release, tag, asset, and secret tools.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "github-mcp-server": "dist/index.js",
-    "github-full-api-mcp-server": "dist/full-api-index.js"
+    "github-mcp-server": "dist/index.js"
   },
   "files": [
     "dist/",

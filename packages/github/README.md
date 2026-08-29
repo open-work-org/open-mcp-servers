@@ -1,6 +1,6 @@
 # @open-work-org/github-mcp-server
 
-Self-hosted GitHub MCP connector combining the official GitHub MCP Server with PAT-authorized REST, GraphQL, release, tag, asset, and encrypted-secret tools.
+Self-hosted GitHub MCP connector exposing PAT-authorized REST, GraphQL, release, tag, asset, and encrypted-secret tools.
 
 ## Install
 
@@ -8,9 +8,9 @@ Self-hosted GitHub MCP connector combining the official GitHub MCP Server with P
 npm install -g @open-work-org/github-mcp-server
 ```
 
-The package provides two executables:
+The package provides one native-only executable:
 
-- `github-mcp-server` — unified official-upstream plus local tools. The npm entrypoint uses Docker by default. The published container bundles the official binary, so it needs no Docker socket; if the upstream process is unavailable, native API tools remain available.
+- `github-mcp-server` — local REST, GraphQL, release, tag, asset, and encrypted-secret tools. It does not start Docker or require the official upstream binary.
 
 ## Container deployment
 
@@ -23,8 +23,7 @@ docker run --rm -p 3001:3001 \
   ghcr.io/open-work-org/github-mcp-server:latest
 ```
 
-The MCP endpoint is `http://HOST:3001/github/mcp` and the health check is `http://HOST:3001/healthz`. Send `Authorization: Bearer <MCP_HTTP_AUTH_TOKEN>` when connecting. The image contains both the official GitHub MCP binary and this package's native REST, GraphQL, release, asset, and encrypted-secret tools.
-- `github-full-api-mcp-server` — local REST/GraphQL/release/secret tools without Docker.
+The MCP endpoint is `http://HOST:3001/github/mcp` and the health check is `http://HOST:3001/healthz`. Send `Authorization: Bearer <MCP_HTTP_AUTH_TOKEN>` when connecting. The published image is the same native-only server exposed over Streamable HTTP; it does not fetch or run the official GitHub MCP binary.
 
 Configure `GITHUB_PERSONAL_ACCESS_TOKEN` in the MCP server environment. The PAT is never supplied by the MCP client in a tool request.
 

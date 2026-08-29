@@ -53,6 +53,6 @@ The exact key varies by MCP client, but a typical remote configuration is:
 
 ## Sessions
 
-The first initialize request creates an MCP session. The server returns a session ID, and subsequent requests use the `MCP-Session-Id` header. Each session starts its own official GitHub MCP child process and closes it when the session ends.
+The first initialize request creates an MCP session. The server returns a session ID, and subsequent requests use the `MCP-Session-Id` header. Each session creates a native GitHub MCP server and closes it when the session ends.
 
-Clients should perform the normal MCP initialize handshake and then call `tools/list`; they do not need to call the upstream server directly.
+Clients should perform the normal MCP initialize handshake and then call `tools/list` to discover the native tools.

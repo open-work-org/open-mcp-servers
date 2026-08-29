@@ -27,9 +27,9 @@ The repository is a small npm workspaces monorepo. Each connector is independent
 | Connector | npm package | What it provides | Runtime notes |
 | --- | --- | --- | --- |
 | Meta | [`@open-work-org/meta-mcp-server`](https://www.npmjs.com/package/@open-work-org/meta-mcp-server) | 200 purpose-built tools for Facebook Pages, Instagram, Threads, Ads Manager, Commerce, Conversions API, audiences, insights, and charts | Stdio package; the root Docker image and Compose file expose this connector over Streamable HTTP |
-| GitHub | [`@open-work-org/github-mcp-server`](https://www.npmjs.com/package/@open-work-org/github-mcp-server) | GitHub's official MCP tools discovered at startup, plus local REST, GraphQL, release, tag, asset, and encrypted-secret tools | Available as npm or as `ghcr.io/open-work-org/github-mcp-server`; the container needs no Docker socket |
+| GitHub | [`@open-work-org/github-mcp-server`](https://www.npmjs.com/package/@open-work-org/github-mcp-server) | Local GitHub REST, GraphQL, release, tag, asset, and encrypted-secret tools | The npm command is native-only; the published container remains available for Streamable HTTP |
 
-Tool availability is permission- and version-dependent. A PAT never grants more access than GitHub or Meta grants to that token. For GitHub, the upstream tool catalog follows the selected official image, so its count can change without a source-code change in this repository.
+Tool availability is permission- and version-dependent. A PAT never grants more access than GitHub or Meta grants to that token.
 
 ### Meta
 
@@ -44,10 +44,11 @@ Start with the [Meta package README](packages/meta/README.md) and [Meta document
 
 ### GitHub
 
-The GitHub package provides two executables:
+The GitHub npm package provides one executable:
 
-- `github-mcp-server` — unified mode. It starts the official GitHub MCP Server, enables the configured toolsets, imports its paginated `tools/list` catalog, and exposes those tools together with the local tools in one MCP connection. The npm entrypoint uses Docker by default; the container bundles the official binary and needs no Docker socket. If the upstream server is unavailable, native API tools remain available.
-- `github-full-api-mcp-server` — API-only mode. It exposes the local REST/GraphQL/release/tag/asset/secret tools without starting Docker.
+- `github-mcp-server` — native API-only mode. It exposes the local REST/GraphQL/release/tag/asset/secret tools without starting Docker.
+
+The published container is the same native-only server exposed over Streamable HTTP and does not fetch or start an official upstream binary.
 
 The local GitHub tools include `github_rest_api_request` and `github_graphql` escape hatches, so documented endpoints that do not yet have a dedicated tool can still be reached using the PAT. Native helpers cover releases, Git references, release assets, and encrypted Actions, Dependabot, Codespaces, and Agent secrets.
 
@@ -80,7 +81,7 @@ Example MCP client configuration:
 
 Add `THREADS_ACCESS_TOKEN` when using Threads operations. Meta setup, permissions, token lifetimes, and API guides are documented in [packages/meta/docs](packages/meta/docs/README.md).
 
-### GitHub unified (stdio)
+### GitHub (stdio, native API tools)
 
 ~~~bash
 npm install -g @open-work-org/github-mcp-server
@@ -101,26 +102,7 @@ Example MCP client configuration:
 }
 ~~~
 
-Docker must be available to the host. Pin `GITHUB_MCP_IMAGE` to an official image tag or digest when reproducibility matters.
-
-### GitHub API-only (stdio)
-
-Use this variant when Docker is unavailable or when you only need the local API tools:
-
-~~~json
-{
-  "mcpServers": {
-    "github-api": {
-      "command": "github-full-api-mcp-server",
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "your_github_pat"
-      }
-    }
-  }
-}
-~~~
-
-Both GitHub executables are included in the same npm package. The API-only process does not include the dynamically discovered official upstream tools.
+The npm command uses the local native API tools and does not require Docker.
 
 ## Run from source
 
@@ -137,18 +119,19 @@ Run Meta after building:
 META_ACCESS_TOKEN="your_meta_token" npm start
 ~~~
 
-Run the unified GitHub server after building:
+Run the GitHub server after building:
 
 ~~~bash
 GITHUB_PERSONAL_ACCESS_TOKEN="your_github_pat" \
   node packages/github/dist/index.js
 ~~~
 
-Run the Docker-free GitHub server:
+The command above supports stdio by default. For Streamable HTTP, set `MCP_TRANSPORT=streamable-http`:
 
 ~~~bash
+MCP_TRANSPORT=streamable-http \
 GITHUB_PERSONAL_ACCESS_TOKEN="your_github_pat" \
-  node packages/github/dist/full-api-index.js
+  node packages/github/dist/index.js
 ~~~
 
 Copy .env.example for a starting point, but keep the real file out of version control.
@@ -172,7 +155,7 @@ curl http://localhost:3000/healthz
 
 The default Meta endpoint is http://127.0.0.1:3000/mcp.
 
-The unified GitHub executable also supports Streamable HTTP. It creates an isolated official-server process per MCP session:
+The GitHub executable also supports Streamable HTTP:
 
 ~~~bash
 MCP_TRANSPORT=streamable-http \
@@ -180,7 +163,7 @@ MCP_HTTP_HOST=127.0.0.1 \
 GITHUB_MCP_HTTP_PORT=3001 \
 MCP_HTTP_AUTH_TOKEN="choose-a-long-random-token" \
 GITHUB_PERSONAL_ACCESS_TOKEN="your_github_pat" \
-github-mcp-server
+node packages/github/dist/index.js
 ~~~
 
 The default GitHub endpoint is http://127.0.0.1:3001/github/mcp, with a health check at /healthz. For non-loopback hosting, configure MCP_HTTP_AUTH_TOKEN and put the service behind HTTPS. The HTTP bearer token is separate from the GitHub or Meta API token.
@@ -194,7 +177,7 @@ See the connector-specific [GitHub Streamable HTTP guide](packages/github/docs/s
 | Connector | Required server variable | Optional variable |
 | --- | --- | --- |
 | Meta | `META_ACCESS_TOKEN` | `THREADS_ACCESS_TOKEN` |
-| GitHub | `GITHUB_PERSONAL_ACCESS_TOKEN` | `GITHUB_MCP_IMAGE`, `OPEN_MCP_GITHUB_UPSTREAM_COMMAND`, `OPEN_MCP_GITHUB_UPSTREAM_ARGS`, `GITHUB_HOST`, `GITHUB_API_URL`, `GITHUB_UPLOADS_URL` |
+| GitHub | `GITHUB_PERSONAL_ACCESS_TOKEN` | `GITHUB_API_URL`, `GITHUB_UPLOADS_URL` |
 | HTTP | — | `MCP_TRANSPORT`, `MCP_HTTP_HOST`, `MCP_HTTP_PORT`, `MCP_HTTP_PATH`, `MCP_HTTP_AUTH_TOKEN`, `MCP_HTTP_ALLOWED_ORIGINS` |
 
 Use a fine-grained GitHub PAT with only the repository, organization, and account permissions required by your workflows. Operations such as releases, tags, workflow dispatches, pull-request approvals, package publishing, and organization secrets still depend on the PAT, token type, SSO, organization policy, and the caller's GitHub role.

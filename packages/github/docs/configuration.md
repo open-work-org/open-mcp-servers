@@ -4,13 +4,9 @@
 
 | Variable | Required | Default | Purpose |
 | --- | --- | --- | --- |
-| `GITHUB_PERSONAL_ACCESS_TOKEN` | Yes | — | PAT used by both the official and local GitHub tools. |
-| `GITHUB_MCP_IMAGE` | No | `ghcr.io/github/github-mcp-server` | Official upstream image to run. Pin a tag or digest for reproducible deployments. |
-| `OPEN_MCP_GITHUB_UPSTREAM_COMMAND` | No | — | Direct upstream executable. The published container sets this to its bundled official GitHub MCP binary. |
-| `OPEN_MCP_GITHUB_UPSTREAM_ARGS` | No | `[]` | JSON array of arguments for the direct upstream executable; the published container uses `["stdio"]`. |
-| `GITHUB_HOST` | No | GitHub.com | GitHub Enterprise Server host passed to the official server. |
-| `GITHUB_API_URL` | No | `https://api.github.com` | REST/GraphQL API base used by local tools. |
-| `GITHUB_UPLOADS_URL` | No | `https://uploads.github.com` | Release-asset upload base used by local tools. |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | Yes | — | PAT used by the native GitHub tools. |
+| `GITHUB_API_URL` | No | `https://api.github.com` | REST/GraphQL API base used by the native tools. |
+| `GITHUB_UPLOADS_URL` | No | `https://uploads.github.com` | Release-asset upload base used by the native tools. |
 | `MCP_TRANSPORT` | No | `stdio` | Set to `streamable-http` for the HTTP server. |
 | `GITHUB_MCP_HTTP_PORT` | No | `3001` | GitHub HTTP listener port. |
 | `GITHUB_MCP_HTTP_PATH` | No | `/github/mcp` | GitHub MCP endpoint path. |
@@ -28,7 +24,7 @@ npm ci
 npm run build
 ```
 
-To install the published GitHub package, including both GitHub executables:
+To install the published GitHub package:
 
 ```bash
 npm install -g @open-work-org/github-mcp-server
@@ -53,24 +49,7 @@ After installing the package, configure the `github-mcp-server` binary:
 
 The client sends MCP requests over stdin/stdout. Diagnostic messages are written to stderr so they do not corrupt the MCP protocol.
 
-## API-only configuration
-
-Use the API-only executable when Docker is unavailable:
-
-```json
-{
-  "mcpServers": {
-    "github-api": {
-      "command": "github-full-api-mcp-server",
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "your_pat"
-      }
-    }
-  }
-}
-```
-
-This variant does not include dynamically discovered official upstream tools.
+The npm `github-mcp-server` executable is the native API-only process. It does not include dynamically discovered official upstream tools and does not require Docker.
 
 ## Token handling
 
