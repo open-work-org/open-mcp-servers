@@ -140,6 +140,14 @@ export interface CustomAudience {
   operation_status?: { code: number; description: string };
 }
 
+export interface CustomAudienceUploadResponse {
+  audience_id?: string;
+  num_received?: number | string;
+  num_invalid_entries?: number | string;
+  num_matched?: number | string;
+  session_id?: string;
+}
+
 export interface MetaPaginatedResponse<T> {
   data: T[];
   paging?: {

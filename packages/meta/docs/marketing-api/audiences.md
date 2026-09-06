@@ -55,6 +55,20 @@ The `ratio` field (0.01 to 0.20) controls audience size: smaller ratios = more s
 
 Automatically updated audiences based on app or website signals. Users are added/removed as they meet or stop meeting the audience rules.
 
+## Customer-list CSV uploads
+
+The MCP server exposes `meta_upload_custom_audience_csv` for adding email and/or phone identifiers to an existing customer-list Custom Audience. The tool:
+
+1. Parses the CSV locally.
+2. Normalizes email values to lowercase and phone values to E.164.
+3. SHA-256 hashes identifiers locally.
+4. Sends only hashed identifiers to Meta through `/{custom-audience-id}/users`, in batches.
+5. Returns local validation counts, Meta's accepted/rejected counts when supplied, and a best-effort processing-status lookup.
+
+The caller must set `acknowledge_sensitive_data: true`, have lawful authority to process the customer data, and use a token with the required `ads_management` access. Use `dry_run: true` to validate a file without transferring data. The server does not return or log source customer values.
+
+Only `operation: "add"` is supported. `operation: "replace"` is rejected before upload because the API does not expose the existing audience member list; use Ads Manager for a true replacement or create a separate audience and switch campaigns deliberately. Check asynchronous processing later with `meta_get_custom_audience_upload_status`.
+
 ## Targeting Options
 
 When creating ad sets, specify targeting with the `targeting` parameter:
