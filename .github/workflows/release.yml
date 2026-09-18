@@ -30,11 +30,13 @@ jobs:
       previous_tag: ${{ steps.detect.outputs.previous_tag }}
       meta_changed: ${{ steps.detect.outputs.meta_changed }}
       github_changed: ${{ steps.detect.outputs.github_changed }}
+      meta_graph_changed: ${{ steps.detect.outputs.meta_graph_changed }}
       meta_image_changed: ${{ steps.detect.outputs.meta_image_changed }}
       github_image_changed: ${{ steps.detect.outputs.github_image_changed }}
       has_release_changes: ${{ steps.detect.outputs.has_release_changes }}
       meta_version: ${{ steps.detect.outputs.meta_version }}
       github_version: ${{ steps.detect.outputs.github_version }}
+      meta_graph_version: ${{ steps.detect.outputs.meta_graph_version }}
     steps:
       - name: Check out release ref
         uses: actions/checkout@v4
@@ -66,6 +68,7 @@ jobs:
 
           meta_changed=false
           github_changed=false
+          meta_graph_changed=false
           meta_image_changed=false
           github_image_changed=false
 
@@ -76,6 +79,9 @@ jobs:
                 ;;
               packages/github/src/*|packages/github/docs/*|packages/github/README.md|packages/github/package.json)
                 github_changed=true
+                ;;
+              packages/meta-graph/src/*|packages/meta-graph/README.md|packages/meta-graph/package.json)
+                meta_graph_changed=true
                 ;;
             esac
 
@@ -90,7 +96,7 @@ jobs:
           done <<< "$changed_files"
 
           has_release_changes=false
-          if [[ "$meta_changed" == true || "$github_changed" == true || "$meta_image_changed" == true || "$github_image_changed" == true ]]; then
+          if [[ "$meta_changed" == true || "$github_changed" == true || "$meta_graph_changed" == true || "$meta_image_changed" == true || "$github_image_changed" == true ]]; then
             has_release_changes=true
           fi
 
@@ -101,6 +107,7 @@ jobs:
 
           meta_version="$(node -p "require('./packages/meta/package.json').version")"
           github_version="$(node -p "require('./packages/github/package.json').version")"
+          meta_graph_version="$(node -p "require('./packages/meta-graph/package.json').version")"
 
           {
             echo "release_tag=$tag"
@@ -108,11 +115,13 @@ jobs:
             echo "previous_tag=$previous_tag"
             echo "meta_changed=$meta_changed"
             echo "github_changed=$github_changed"
+            echo "meta_graph_changed=$meta_graph_changed"
             echo "meta_image_changed=$meta_image_changed"
             echo "github_image_changed=$github_image_changed"
             echo "has_release_changes=$has_release_changes"
             echo "meta_version=$meta_version"
             echo "github_version=$github_version"
+            echo "meta_graph_version=$meta_graph_version"
           } >> "$GITHUB_OUTPUT"
 
   validate:
@@ -136,7 +145,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build both packages
+      - name: Build all packages
         run: npm run build
 
       - name: Run tests
@@ -147,6 +156,7 @@ jobs:
           PREVIOUS_TAG: ${{ needs.detect.outputs.previous_tag }}
           META_CHANGED: ${{ needs.detect.outputs.meta_changed }}
           GITHUB_CHANGED: ${{ needs.detect.outputs.github_changed }}
+          META_GRAPH_CHANGED: ${{ needs.detect.outputs.meta_graph_changed }}
         run: |
           set -euo pipefail
 
@@ -188,6 +198,7 @@ jobs:
 
           validate_version packages/meta "$META_CHANGED"
           validate_version packages/github "$GITHUB_CHANGED"
+          validate_version packages/meta-graph "$META_GRAPH_CHANGED"
 
   publish_npm:
     name: Publish npm packages
@@ -198,6 +209,7 @@ jobs:
       ref: ${{ needs.detect.outputs.target_sha }}
       meta_changed: ${{ needs.detect.outputs.meta_changed == 'true' }}
       github_changed: ${{ needs.detect.outputs.github_changed == 'true' }}
+      meta_graph_changed: ${{ needs.detect.outputs.meta_graph_changed == 'true' }}
     secrets: inherit
 
   publish_ghcr:
@@ -234,10 +246,12 @@ jobs:
           PREVIOUS_TAG: ${{ needs.detect.outputs.previous_tag }}
           META_CHANGED: ${{ needs.detect.outputs.meta_changed }}
           GITHUB_CHANGED: ${{ needs.detect.outputs.github_changed }}
+          META_GRAPH_CHANGED: ${{ needs.detect.outputs.meta_graph_changed }}
           META_IMAGE_CHANGED: ${{ needs.detect.outputs.meta_image_changed }}
           GITHUB_IMAGE_CHANGED: ${{ needs.detect.outputs.github_image_changed }}
           META_VERSION: ${{ needs.detect.outputs.meta_version }}
           GITHUB_VERSION: ${{ needs.detect.outputs.github_version }}
+          META_GRAPH_VERSION: ${{ needs.detect.outputs.meta_graph_version }}
         run: |
           cat > release-manifest.json <<EOF
           {
@@ -246,7 +260,8 @@ jobs:
             "previous_tag": "$PREVIOUS_TAG",
             "packages": {
               "@open-work-org/meta-mcp-server": {"version": "$META_VERSION", "changed": $META_CHANGED},
-              "@open-work-org/github-mcp-server": {"version": "$GITHUB_VERSION", "changed": $GITHUB_CHANGED}
+              "@open-work-org/github-mcp-server": {"version": "$GITHUB_VERSION", "changed": $GITHUB_CHANGED},
+              "@open-work-org/meta-graph-mcp-server": {"version": "$META_GRAPH_VERSION", "changed": $META_GRAPH_CHANGED}
             },
             "images": {
               "ghcr.io/open-work-org/meta-mcp-server": {"tag": "$RELEASE_TAG", "changed": $META_IMAGE_CHANGED},
@@ -260,6 +275,7 @@ jobs:
 
           - Meta npm package: @open-work-org/meta-mcp-server@$META_VERSION ($META_CHANGED)
           - GitHub npm package: @open-work-org/github-mcp-server@$GITHUB_VERSION ($GITHUB_CHANGED)
+          - Universal Meta Graph npm package: @open-work-org/meta-graph-mcp-server@$META_GRAPH_VERSION ($META_GRAPH_CHANGED)
           - Meta container image: ghcr.io/open-work-org/meta-mcp-server:$RELEASE_TAG ($META_IMAGE_CHANGED)
           - GitHub container image: ghcr.io/open-work-org/github-mcp-server:$RELEASE_TAG ($GITHUB_IMAGE_CHANGED)
 

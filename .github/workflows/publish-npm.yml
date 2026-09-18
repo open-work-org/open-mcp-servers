@@ -15,6 +15,10 @@ on:
         description: Publish the GitHub package
         required: true
         type: boolean
+      meta_graph_changed:
+        description: Publish the universal Meta Graph package
+        required: true
+        type: boolean
     secrets:
       NPM_TOKEN:
         required: false
@@ -72,6 +76,22 @@ jobs:
             echo "@open-work-org/github-mcp-server@${version} already exists; skipping publish."
           else
             npm publish --workspace @open-work-org/github-mcp-server --access public --provenance
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish universal Meta Graph package when version is new
+        if: inputs.meta_graph_changed
+        run: |
+          if [[ -z "${NODE_AUTH_TOKEN:-}" ]]; then
+            echo "::error::NPM_TOKEN is required when the universal Meta Graph package changed."
+            exit 1
+          fi
+          version="$(node -p "require('./packages/meta-graph/package.json').version")"
+          if npm view "@open-work-org/meta-graph-mcp-server@${version}" version >/dev/null 2>&1; then
+            echo "@open-work-org/meta-graph-mcp-server@${version} already exists; skipping publish."
+          else
+            npm publish --workspace @open-work-org/meta-graph-mcp-server --access public --provenance
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

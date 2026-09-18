@@ -4,6 +4,7 @@ Self-hosted [Model Context Protocol](https://modelcontextprotocol.io/) connector
 
 [![CI](https://github.com/open-work-org/open-mcp-servers/actions/workflows/ci.yml/badge.svg)](https://github.com/open-work-org/open-mcp-servers/actions/workflows/ci.yml)
 [![Meta package](https://img.shields.io/npm/v/@open-work-org/meta-mcp-server?label=meta%20npm)](https://www.npmjs.com/package/@open-work-org/meta-mcp-server)
+[![Meta Graph package](https://img.shields.io/npm/v/@open-work-org/meta-graph-mcp-server?label=meta%20graph%20npm)](https://www.npmjs.com/package/@open-work-org/meta-graph-mcp-server)
 [![GitHub package](https://img.shields.io/npm/v/@open-work-org/github-mcp-server?label=github%20npm)](https://www.npmjs.com/package/@open-work-org/github-mcp-server)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -27,6 +28,7 @@ The repository is a small npm workspaces monorepo. Each connector is independent
 | Connector | npm package | What it provides | Runtime notes |
 | --- | --- | --- | --- |
 | Meta | [`@open-work-org/meta-mcp-server`](https://www.npmjs.com/package/@open-work-org/meta-mcp-server) | 200 purpose-built tools for Facebook Pages, Instagram, Threads, Ads Manager, Commerce, Conversions API, audiences, insights, and charts | Stdio package; the root Docker image and Compose file expose this connector over Streamable HTTP |
+| Meta Graph | [`@open-work-org/meta-graph-mcp-server`](https://www.npmjs.com/package/@open-work-org/meta-graph-mcp-server) | One generic `meta_graph_api_request` tool for direct access to Meta Graph API paths | Stdio package; configured with `META_ACCESS_TOKEN` only |
 | GitHub | [`@open-work-org/github-mcp-server`](https://www.npmjs.com/package/@open-work-org/github-mcp-server) | Local GitHub REST, GraphQL, release, tag, asset, and encrypted-secret tools | The npm command is native-only; the published container remains available for Streamable HTTP |
 
 Tool availability is permission- and version-dependent. A PAT never grants more access than GitHub or Meta grants to that token.
@@ -41,6 +43,33 @@ The Meta connector covers:
 - Threads, Commerce, and chart generation.
 
 Start with the [Meta package README](packages/meta/README.md) and [Meta documentation index](packages/meta/docs/README.md).
+
+### Meta Graph
+
+The Meta Graph package exposes a single low-level escape hatch for Graph API endpoints that do not yet have a purpose-built tool. It supports GET, POST, PATCH, and DELETE requests, injects `META_ACCESS_TOKEN` server-side, and requires explicit confirmation for mutations.
+
+Install it with:
+
+~~~bash
+npm install -g @open-work-org/meta-graph-mcp-server
+~~~
+
+Example MCP client configuration:
+
+~~~json
+{
+  "mcpServers": {
+    "meta-graph": {
+      "command": "meta-graph-mcp-server",
+      "env": {
+        "META_ACCESS_TOKEN": "your_meta_token"
+      }
+    }
+  }
+}
+~~~
+
+See the [Meta Graph package README](packages/meta-graph/README.md) for the tool schema and API-version configuration. Multipart uploads, pagination, and asynchronous workflows may still require specialized handling.
 
 ### GitHub
 
@@ -80,6 +109,14 @@ Example MCP client configuration:
 ~~~
 
 Add `THREADS_ACCESS_TOKEN` when using Threads operations. Meta setup, permissions, token lifetimes, and API guides are documented in [packages/meta/docs](packages/meta/docs/README.md).
+
+### Meta Graph (stdio)
+
+~~~bash
+npm install -g @open-work-org/meta-graph-mcp-server
+~~~
+
+Configure it with `META_ACCESS_TOKEN`; no separate OAuth registration is required by this package.
 
 ### GitHub (stdio, native API tools)
 
@@ -177,6 +214,7 @@ See the connector-specific [GitHub Streamable HTTP guide](packages/github/docs/s
 | Connector | Required server variable | Optional variable |
 | --- | --- | --- |
 | Meta | `META_ACCESS_TOKEN` | `THREADS_ACCESS_TOKEN` |
+| Meta Graph | `META_ACCESS_TOKEN` | `META_GRAPH_API_VERSION`, `META_GRAPH_API_BASE_URL` |
 | GitHub | `GITHUB_PERSONAL_ACCESS_TOKEN` | `GITHUB_API_URL`, `GITHUB_UPLOADS_URL` |
 | HTTP | — | `MCP_TRANSPORT`, `MCP_HTTP_HOST`, `MCP_HTTP_PORT`, `MCP_HTTP_PATH`, `MCP_HTTP_AUTH_TOKEN`, `MCP_HTTP_ALLOWED_ORIGINS` |
 
@@ -205,6 +243,7 @@ Never commit .env files, PATs, access tokens, secret values, private keys, or cu
 | Meta connector overview and setup | [packages/meta/docs/README.md](packages/meta/docs/README.md) |
 | Meta authentication | [packages/meta/docs/authentication/access-tokens.md](packages/meta/docs/authentication/access-tokens.md) |
 | Meta API guides | [packages/meta/docs/README.md](packages/meta/docs/README.md) |
+| Meta Graph package | [packages/meta-graph/README.md](packages/meta-graph/README.md) |
 
 ## Repository layout
 
@@ -215,6 +254,11 @@ open-mcp-servers/
 │   │   ├── src/                  # Meta MCP implementation
 │   │   ├── tests/
 │   │   ├── docs/
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── meta-graph/
+│   │   ├── src/                  # Generic Meta Graph API MCP implementation
+│   │   ├── tests/
 │   │   ├── package.json
 │   │   └── README.md
 │   └── github/
@@ -250,6 +294,7 @@ Useful focused commands:
 
 ~~~bash
 npm run build:meta
+npm run build:meta-graph
 npm run build:github
 npm run test:watch
 npm run clean
@@ -262,9 +307,10 @@ Connector-specific changes belong under packages/<connector>/. Add or update a f
 The repository uses one sequential repository tag, such as v-1 or v-2, for a release event. Package versions remain independent:
 
 - @open-work-org/meta-mcp-server is versioned in packages/meta/package.json.
+- @open-work-org/meta-graph-mcp-server is versioned in packages/meta-graph/package.json.
 - @open-work-org/github-mcp-server is versioned in packages/github/package.json.
 
-Pushing a new v-N tag runs the release workflow. It tests and builds both packages, detects which connector paths changed, publishes only changed npm package versions, publishes the Meta image only when its runtime inputs changed, and creates one GitHub Release with a manifest of the artifacts. An unchanged package is not republished.
+Pushing a new v-N tag runs the release workflow. It tests and builds all packages, detects which connector paths changed, publishes only changed npm package versions, publishes the Meta image only when its runtime inputs changed, and creates one GitHub Release with a manifest of the artifacts. An unchanged package is not republished.
 
 Before creating a release tag:
 

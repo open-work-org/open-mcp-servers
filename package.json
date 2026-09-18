@@ -6,17 +6,21 @@
   "type": "module",
   "workspaces": [
     "packages/meta",
-    "packages/github"
+    "packages/github",
+    "packages/meta-graph"
   ],
   "scripts": {
     "start": "node packages/meta/dist/index.js",
+    "start:meta-graph": "node packages/meta-graph/dist/index.js",
     "dev": "tsx watch packages/meta/src/index.ts",
-    "build": "tsc -b packages/meta packages/github",
+    "dev:meta-graph": "tsx watch packages/meta-graph/src/index.ts",
+    "build": "tsc -b packages/meta packages/github packages/meta-graph",
     "build:meta": "npm run build --workspace @open-work-org/meta-mcp-server",
     "build:github": "npm run build --workspace @open-work-org/github-mcp-server",
+    "build:meta-graph": "npm run build --workspace @open-work-org/meta-graph-mcp-server",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clean": "rm -rf packages/meta/dist packages/github/dist packages/meta/tsconfig.tsbuildinfo packages/github/tsconfig.tsbuildinfo"
+    "clean": "rm -rf packages/meta/dist packages/github/dist packages/meta-graph/dist packages/meta/tsconfig.tsbuildinfo packages/github/tsconfig.tsbuildinfo packages/meta-graph/tsconfig.tsbuildinfo"
   },
   "repository": {
     "type": "git",

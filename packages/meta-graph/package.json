@@ -1,0 +1,43 @@
+{
+  "name": "@open-work-org/meta-graph-mcp-server",
+  "version": "1.0.0",
+  "description": "Universal Meta Graph API MCP server using META_ACCESS_TOKEN.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "meta-graph-mcp-server": "dist/index.js"
+  },
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-work-org/open-mcp-servers.git",
+    "directory": "packages/meta-graph"
+  },
+  "license": "MIT",
+  "author": "Open Work Org",
+  "keywords": [
+    "mcp",
+    "meta",
+    "facebook",
+    "graph-api",
+    "model-context-protocol"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "axios": "^1.20.0",
+    "zod": "^3.25.76"
+  }
+}
