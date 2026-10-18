@@ -167,7 +167,6 @@ jobs:
           GITHUB_CHANGED: ${{ needs.detect.outputs.github_changed }}
           META_GRAPH_CHANGED: ${{ needs.detect.outputs.meta_graph_changed }}
           DELHIVERY_CHANGED: ${{ needs.detect.outputs.delhivery_changed }}
-          DELHIVERY_CHANGED: ${{ needs.detect.outputs.delhivery_changed }}
         run: |
           set -euo pipefail
 
