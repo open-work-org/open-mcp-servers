@@ -4,7 +4,7 @@ Local stdio MCP server for the Delhivery One B2C APIs. It exposes one bounded re
 
 ## Configure
 
-The server uses staging by default. Set the Delhivery token in your MCP client configuration:
+The server uses production by default. Set the production Delhivery token in your MCP client configuration:
 
 ```json
 {
@@ -13,14 +13,14 @@ The server uses staging by default. Set the Delhivery token in your MCP client c
       "command": "delhivery-mcp-server",
       "env": {
         "DELHIVERY_API_TOKEN": "your_delhivery_token",
-        "DELHIVERY_ENV": "staging"
+        "DELHIVERY_ENV": "production"
       }
     }
   }
 }
 ```
 
-Set `DELHIVERY_ENV` to `production` only with the matching production token. The server maps `staging` to `https://staging-express.delhivery.com` and `production` to `https://track.delhivery.com`. It does not start an HTTP listener; MCP messages use stdin/stdout, and diagnostic output is not written to stdout.
+Set `DELHIVERY_ENV` to `staging` when using the matching staging token. The server maps `staging` to `https://staging-express.delhivery.com` and `production` to `https://track.delhivery.com`. It does not start an HTTP listener; MCP messages use stdin/stdout, and diagnostic output is not written to stdout.
 
 Install with `npm install -g @open-work-org/delhivery-mcp-server`, or run the package from this repository with `npm run build:delhivery` and `npm run start:delhivery`.
 

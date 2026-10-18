@@ -1,6 +1,6 @@
 {
   "name": "@open-work-org/delhivery-mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Local stdio MCP server for the Delhivery One B2C APIs.",
   "type": "module",
   "main": "dist/index.js",

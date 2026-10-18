@@ -10,7 +10,7 @@ export const API_BASE_URLS: Record<DelhiveryEnvironment, string> = {
 };
 
 export function getEnvironment(value: string | undefined): DelhiveryEnvironment {
-  const environment = (value ?? "staging").toLowerCase();
+  const environment = (value ?? "production").toLowerCase();
   if (environment === "staging" || environment === "production") return environment;
   throw new Error('DELHIVERY_ENV must be either "staging" or "production".');
 }
