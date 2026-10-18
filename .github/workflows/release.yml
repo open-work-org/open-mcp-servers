@@ -259,6 +259,7 @@ jobs:
           META_CHANGED: ${{ needs.detect.outputs.meta_changed }}
           GITHUB_CHANGED: ${{ needs.detect.outputs.github_changed }}
           META_GRAPH_CHANGED: ${{ needs.detect.outputs.meta_graph_changed }}
+          DELHIVERY_CHANGED: ${{ needs.detect.outputs.delhivery_changed }}
           META_IMAGE_CHANGED: ${{ needs.detect.outputs.meta_image_changed }}
           GITHUB_IMAGE_CHANGED: ${{ needs.detect.outputs.github_image_changed }}
           META_VERSION: ${{ needs.detect.outputs.meta_version }}
