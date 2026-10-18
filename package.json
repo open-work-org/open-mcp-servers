@@ -2,25 +2,29 @@
   "name": "open-mcp-servers-workspace",
   "version": "0.0.0",
   "private": true,
-  "description": "Workspace containing the Open Work Meta and GitHub MCP packages.",
+  "description": "Workspace containing the Open Work Meta, GitHub, and Delhivery MCP packages.",
   "type": "module",
   "workspaces": [
     "packages/meta",
     "packages/github",
-    "packages/meta-graph"
+    "packages/meta-graph",
+    "packages/delhivery"
   ],
   "scripts": {
     "start": "node packages/meta/dist/index.js",
     "start:meta-graph": "node packages/meta-graph/dist/index.js",
     "dev": "tsx watch packages/meta/src/index.ts",
     "dev:meta-graph": "tsx watch packages/meta-graph/src/index.ts",
-    "build": "tsc -b packages/meta packages/github packages/meta-graph",
+    "build": "tsc -b packages/meta packages/github packages/meta-graph packages/delhivery",
     "build:meta": "npm run build --workspace @open-work-org/meta-mcp-server",
     "build:github": "npm run build --workspace @open-work-org/github-mcp-server",
     "build:meta-graph": "npm run build --workspace @open-work-org/meta-graph-mcp-server",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clean": "rm -rf packages/meta/dist packages/github/dist packages/meta-graph/dist packages/meta/tsconfig.tsbuildinfo packages/github/tsconfig.tsbuildinfo packages/meta-graph/tsconfig.tsbuildinfo"
+    "clean": "rm -rf packages/meta/dist packages/github/dist packages/meta-graph/dist packages/meta/tsconfig.tsbuildinfo packages/github/tsconfig.tsbuildinfo packages/meta-graph/tsconfig.tsbuildinfo packages/delhivery/dist packages/delhivery/tsconfig.tsbuildinfo",
+    "start:delhivery": "node packages/delhivery/dist/index.js",
+    "dev:delhivery": "tsx watch packages/delhivery/src/index.ts",
+    "build:delhivery": "npm run build --workspace @open-work-org/delhivery-mcp-server"
   },
   "repository": {
     "type": "git",

@@ -1,6 +1,6 @@
 # Open MCP Servers
 
-Self-hosted [Model Context Protocol](https://modelcontextprotocol.io/) connectors for Meta and GitHub.
+Self-hosted [Model Context Protocol](https://modelcontextprotocol.io/) connectors for Meta, GitHub, and Delhivery.
 
 [![CI](https://github.com/open-work-org/open-mcp-servers/actions/workflows/ci.yml/badge.svg)](https://github.com/open-work-org/open-mcp-servers/actions/workflows/ci.yml)
 [![Meta package](https://img.shields.io/npm/v/@open-work-org/meta-mcp-server?label=meta%20npm)](https://www.npmjs.com/package/@open-work-org/meta-mcp-server)
@@ -30,6 +30,7 @@ The repository is a small npm workspaces monorepo. Each connector is independent
 | Meta | [`@open-work-org/meta-mcp-server`](https://www.npmjs.com/package/@open-work-org/meta-mcp-server) | 200 purpose-built tools for Facebook Pages, Instagram, Threads, Ads Manager, Commerce, Conversions API, audiences, insights, and charts | Stdio package; the root Docker image and Compose file expose this connector over Streamable HTTP |
 | Meta Graph | [`@open-work-org/meta-graph-mcp-server`](https://www.npmjs.com/package/@open-work-org/meta-graph-mcp-server) | One generic `meta_graph_api_request` tool for direct access to Meta Graph API paths | Stdio package; configured with `META_ACCESS_TOKEN` only |
 | GitHub | [`@open-work-org/github-mcp-server`](https://www.npmjs.com/package/@open-work-org/github-mcp-server) | Local GitHub REST, GraphQL, release, tag, asset, and encrypted-secret tools | The npm command is native-only; the published container remains available for Streamable HTTP |
+| Delhivery | [`@open-work-org/delhivery-mcp-server`](https://www.npmjs.com/package/@open-work-org/delhivery-mcp-server) | Delhivery One B2C API request tool with local token injection | Local stdio only; staging by default, production selected explicitly |
 
 Tool availability is permission- and version-dependent. A PAT never grants more access than GitHub or Meta grants to that token.
 
@@ -83,6 +84,12 @@ The local GitHub tools include `github_rest_api_request` and `github_graphql` es
 
 See the [GitHub package README](packages/github/README.md), [tool guide](packages/github/docs/tools.md), and [GitHub documentation index](packages/github/docs/README.md).
 
+### Delhivery
+
+The Delhivery package exposes `delhivery_b2c_api_request` for the documented B2C API paths. It injects `DELHIVERY_API_TOKEN`, fixes the API host to Delhivery staging or production, and requires explicit confirmation for write methods. The package runs locally over stdio and has no HTTP server mode.
+
+See [packages/delhivery/README.md](packages/delhivery/README.md) for client configuration and usage.
+
 ## Install a connector
 
 Install only the package you need. Node.js 18 or newer is supported.
@@ -117,6 +124,14 @@ npm install -g @open-work-org/meta-graph-mcp-server
 ~~~
 
 Configure it with `META_ACCESS_TOKEN`; no separate OAuth registration is required by this package.
+
+### Delhivery (stdio)
+
+~~~bash
+npm install -g @open-work-org/delhivery-mcp-server
+~~~
+
+Set `DELHIVERY_API_TOKEN` in the MCP client's environment. `DELHIVERY_ENV` defaults to `staging`; set it to `production` only with the corresponding production token.
 
 ### GitHub (stdio, native API tools)
 
@@ -216,6 +231,7 @@ See the connector-specific [GitHub Streamable HTTP guide](packages/github/docs/s
 | Meta | `META_ACCESS_TOKEN` | `THREADS_ACCESS_TOKEN` |
 | Meta Graph | `META_ACCESS_TOKEN` | `META_GRAPH_API_VERSION`, `META_GRAPH_API_BASE_URL` |
 | GitHub | `GITHUB_PERSONAL_ACCESS_TOKEN` | `GITHUB_API_URL`, `GITHUB_UPLOADS_URL` |
+| Delhivery | `DELHIVERY_API_TOKEN` | `DELHIVERY_ENV` (`staging` by default; set `production` with the matching live token) |
 | HTTP | — | `MCP_TRANSPORT`, `MCP_HTTP_HOST`, `MCP_HTTP_PORT`, `MCP_HTTP_PATH`, `MCP_HTTP_AUTH_TOKEN`, `MCP_HTTP_ALLOWED_ORIGINS` |
 
 Use a fine-grained GitHub PAT with only the repository, organization, and account permissions required by your workflows. Operations such as releases, tags, workflow dispatches, pull-request approvals, package publishing, and organization secrets still depend on the PAT, token type, SSO, organization policy, and the caller's GitHub role.
@@ -244,6 +260,7 @@ Never commit .env files, PATs, access tokens, secret values, private keys, or cu
 | Meta authentication | [packages/meta/docs/authentication/access-tokens.md](packages/meta/docs/authentication/access-tokens.md) |
 | Meta API guides | [packages/meta/docs/README.md](packages/meta/docs/README.md) |
 | Meta Graph package | [packages/meta-graph/README.md](packages/meta-graph/README.md) |
+| Delhivery package | [packages/delhivery/README.md](packages/delhivery/README.md) |
 
 ## Repository layout
 
@@ -259,6 +276,10 @@ open-mcp-servers/
 │   ├── meta-graph/
 │   │   ├── src/                  # Generic Meta Graph API MCP implementation
 │   │   ├── tests/
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── delhivery/
+│   │   ├── src/                  # Local Delhivery B2C MCP implementation
 │   │   ├── package.json
 │   │   └── README.md
 │   └── github/
@@ -295,6 +316,7 @@ Useful focused commands:
 ~~~bash
 npm run build:meta
 npm run build:meta-graph
+npm run build:delhivery
 npm run build:github
 npm run test:watch
 npm run clean
@@ -308,6 +330,7 @@ The repository uses one sequential repository tag, such as v-1 or v-2, for a rel
 
 - @open-work-org/meta-mcp-server is versioned in packages/meta/package.json.
 - @open-work-org/meta-graph-mcp-server is versioned in packages/meta-graph/package.json.
+- @open-work-org/delhivery-mcp-server is versioned in packages/delhivery/package.json.
 - @open-work-org/github-mcp-server is versioned in packages/github/package.json.
 
 Pushing a new v-N tag runs the release workflow. It tests and builds all packages, detects which connector paths changed, publishes only changed npm package versions, publishes the Meta image only when its runtime inputs changed, and creates one GitHub Release with a manifest of the artifacts. An unchanged package is not republished.

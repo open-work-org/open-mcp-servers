@@ -7,6 +7,8 @@ This directory contains connector-specific documentation and API references.
 - [GitHub package](../packages/github/docs/README.md) — PAT-authorized REST/GraphQL access, encrypted secrets, and Streamable HTTP.
 - [Meta package](../packages/meta/docs/README.md) — Facebook Pages, Instagram, Ads Manager, Threads, Commerce, Conversions API, and Insights.
 
+- [Delhivery B2C package](../packages/delhivery/README.md) — Delhivery One B2C API request access over local stdio.
+
 ## Meta API references
 
 Meta documentation is grouped under [`packages/meta/docs/`](../packages/meta/docs/README.md):

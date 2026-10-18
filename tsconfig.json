@@ -3,6 +3,7 @@
   "references": [
     { "path": "./packages/meta" },
     { "path": "./packages/github" },
-    { "path": "./packages/meta-graph" }
+    { "path": "./packages/meta-graph" },
+    { "path": "./packages/delhivery" }
   ]
 }
