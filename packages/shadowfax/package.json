@@ -1,0 +1,42 @@
+{
+  "name": "@open-work-org/shadowfax-mcp-server",
+  "version": "0.1.0",
+  "description": "Local stdio MCP server for Shadowfax Forward Logistics APIs.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "shadowfax-mcp-server": "dist/index.js"
+  },
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-work-org/open-mcp-servers.git",
+    "directory": "packages/shadowfax"
+  },
+  "license": "MIT",
+  "author": "Open Work Org",
+  "keywords": [
+    "mcp",
+    "shadowfax",
+    "logistics",
+    "shipping",
+    "model-context-protocol"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.25.76"
+  }
+}

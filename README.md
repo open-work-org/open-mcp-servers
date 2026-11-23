@@ -1,6 +1,6 @@
 # Open MCP Servers
 
-Self-hosted [Model Context Protocol](https://modelcontextprotocol.io/) connectors for Meta, GitHub, and Delhivery.
+Self-hosted [Model Context Protocol](https://modelcontextprotocol.io/) connectors for Meta, GitHub, Delhivery, and Shadowfax.
 
 [![CI](https://github.com/open-work-org/open-mcp-servers/actions/workflows/ci.yml/badge.svg)](https://github.com/open-work-org/open-mcp-servers/actions/workflows/ci.yml)
 [![Meta package](https://img.shields.io/npm/v/@open-work-org/meta-mcp-server?label=meta%20npm)](https://www.npmjs.com/package/@open-work-org/meta-mcp-server)
@@ -31,6 +31,7 @@ The repository is a small npm workspaces monorepo. Each connector is independent
 | Meta Graph | [`@open-work-org/meta-graph-mcp-server`](https://www.npmjs.com/package/@open-work-org/meta-graph-mcp-server) | One generic `meta_graph_api_request` tool for direct access to Meta Graph API paths | Stdio package; configured with `META_ACCESS_TOKEN` only |
 | GitHub | [`@open-work-org/github-mcp-server`](https://www.npmjs.com/package/@open-work-org/github-mcp-server) | Local GitHub REST, GraphQL, release, tag, asset, and encrypted-secret tools | The npm command is native-only; the published container remains available for Streamable HTTP |
 | Delhivery | [`@open-work-org/delhivery-mcp-server`](https://www.npmjs.com/package/@open-work-org/delhivery-mcp-server) | Delhivery One B2C API request tool with local token injection | Local stdio only; staging by default, production selected explicitly |
+| Shadowfax | [`@open-work-org/shadowfax-mcp-server`](https://www.npmjs.com/package/@open-work-org/shadowfax-mcp-server) | Forward Logistics API request tool with local token injection | Local stdio only; production by default, staging selected explicitly |
 
 Tool availability is permission- and version-dependent. A PAT never grants more access than GitHub or Meta grants to that token.
 
@@ -89,6 +90,12 @@ See the [GitHub package README](packages/github/README.md), [tool guide](package
 The Delhivery package exposes `delhivery_b2c_api_request` for the documented B2C API paths. It injects `DELHIVERY_API_TOKEN`, fixes the API host to Delhivery staging or production, and requires explicit confirmation for write methods. The package runs locally over stdio and has no HTTP server mode.
 
 See [packages/delhivery/README.md](packages/delhivery/README.md) for client configuration and usage.
+
+### Shadowfax
+
+The Shadowfax package exposes `shadowfax_fwd` for Forward Logistics API paths. It injects `SHADOWFAX_API_TOKEN`, fixes the host to Shadowfax staging or production, and requires `confirm_mutation: true` for non-GET requests. The package runs locally over stdio and has no HTTP server mode.
+
+See [packages/shadowfax/README.md](packages/shadowfax/README.md) for client configuration and usage.
 
 ## Install a connector
 
@@ -232,6 +239,7 @@ See the connector-specific [GitHub Streamable HTTP guide](packages/github/docs/s
 | Meta Graph | `META_ACCESS_TOKEN` | `META_GRAPH_API_VERSION`, `META_GRAPH_API_BASE_URL` |
 | GitHub | `GITHUB_PERSONAL_ACCESS_TOKEN` | `GITHUB_API_URL`, `GITHUB_UPLOADS_URL` |
 | Delhivery | `DELHIVERY_API_TOKEN` | `DELHIVERY_ENV` (`staging` by default; set `production` with the matching live token) |
+| Shadowfax | `SHADOWFAX_API_TOKEN` | `SHADOWFAX_ENV` (`production` by default; set `staging` with the matching staging token) |
 | HTTP | — | `MCP_TRANSPORT`, `MCP_HTTP_HOST`, `MCP_HTTP_PORT`, `MCP_HTTP_PATH`, `MCP_HTTP_AUTH_TOKEN`, `MCP_HTTP_ALLOWED_ORIGINS` |
 
 Use a fine-grained GitHub PAT with only the repository, organization, and account permissions required by your workflows. Operations such as releases, tags, workflow dispatches, pull-request approvals, package publishing, and organization secrets still depend on the PAT, token type, SSO, organization policy, and the caller's GitHub role.
@@ -261,6 +269,7 @@ Never commit .env files, PATs, access tokens, secret values, private keys, or cu
 | Meta API guides | [packages/meta/docs/README.md](packages/meta/docs/README.md) |
 | Meta Graph package | [packages/meta-graph/README.md](packages/meta-graph/README.md) |
 | Delhivery package | [packages/delhivery/README.md](packages/delhivery/README.md) |
+| Shadowfax Forward Logistics | [packages/shadowfax/README.md](packages/shadowfax/README.md) |
 
 ## Repository layout
 
@@ -280,6 +289,10 @@ open-mcp-servers/
 │   │   └── README.md
 │   ├── delhivery/
 │   │   ├── src/                  # Local Delhivery B2C MCP implementation
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── shadowfax/
+│   │   ├── src/                  # Local Shadowfax Forward Logistics MCP implementation
 │   │   ├── package.json
 │   │   └── README.md
 │   └── github/
@@ -317,6 +330,7 @@ Useful focused commands:
 npm run build:meta
 npm run build:meta-graph
 npm run build:delhivery
+npm run build:shadowfax
 npm run build:github
 npm run test:watch
 npm run clean
@@ -331,6 +345,7 @@ The repository uses one sequential repository tag, such as v-1 or v-2, for a rel
 - @open-work-org/meta-mcp-server is versioned in packages/meta/package.json.
 - @open-work-org/meta-graph-mcp-server is versioned in packages/meta-graph/package.json.
 - @open-work-org/delhivery-mcp-server is versioned in packages/delhivery/package.json.
+- @open-work-org/shadowfax-mcp-server is versioned in packages/shadowfax/package.json.
 - @open-work-org/github-mcp-server is versioned in packages/github/package.json.
 
 Pushing a new v-N tag runs the release workflow. It tests and builds all packages, detects which connector paths changed, publishes only changed npm package versions, publishes the Meta image only when its runtime inputs changed, and creates one GitHub Release with a manifest of the artifacts. An unchanged package is not republished.

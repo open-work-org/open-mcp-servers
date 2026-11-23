@@ -8,6 +8,7 @@ This directory contains connector-specific documentation and API references.
 - [Meta package](../packages/meta/docs/README.md) — Facebook Pages, Instagram, Ads Manager, Threads, Commerce, Conversions API, and Insights.
 
 - [Delhivery B2C package](../packages/delhivery/README.md) — Delhivery One B2C API request access over local stdio.
+- [Shadowfax Forward Logistics package](../packages/shadowfax/README.md) — Shadowfax Forward Logistics API access over local stdio.
 
 ## Meta API references
 
